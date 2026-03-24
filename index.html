@@ -1,234 +1,685 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kviz igra</title>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+  >
 
-<style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  color:white;
-}
+  <title>Kviz igra</title>
 
-.game {
-  position:relative;
-  width:100%;
-  height:100vh;
-  background:url("pozadina.png") center/cover no-repeat;
-}
+  <meta name="theme-color" content="#0b1026">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kviz igra">
 
-/* GORNJI BROJEVI */
-.round-numbers {
-  position:absolute;
-  top:3%;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:10px;
-}
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
-.round-numbers button {
-  padding:10px;
-  font-size:18px;
-}
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, sans-serif;
+    }
 
-/* COUNTER */
-.counter {
-  position:absolute;
-  top:30%;
-  left:50%;
-  transform:translate(-50%, -50%);
-  font-size:60px;
-  background:red;
-  padding:20px 40px;
-  cursor:pointer;
-}
+    body {
+      color: white;
+    }
 
-/* IGRAČI */
-.player {
-  position:absolute;
-  bottom:28%;
-  font-size:30px;
-  background:red;
-  padding:10px 20px;
-}
+    .game {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      background: url("pozadina.png") center center / contain no-repeat;
+      background-color: #000;
+    }
 
-#p1 { left:15%; }
-#p2 { left:45%; }
-#p3 { right:15%; }
+    .round-numbers {
+      position: absolute;
+      top: 2.5%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      z-index: 5;
+    }
 
-/* PITANJE */
-.question-box {
-  position:absolute;
-  bottom:0;
-  width:100%;
-  background:red;
-  padding:30px;
-  text-align:center;
-}
+    .round-numbers button {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 8px 10px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: rgba(210, 20, 30, 0.95);
+      color: white;
+      cursor: pointer;
+    }
 
-.answers {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-top:20px;
-}
+    .round-numbers button.used {
+      opacity: 0.35;
+      pointer-events: none;
+    }
 
-.answers button {
-  padding:15px;
-  font-size:18px;
-}
-</style>
+    .counter {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 140px;
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 900;
+      background: rgba(210, 20, 30, 0.92);
+      color: white;
+      border-radius: 12px;
+      z-index: 6;
+      user-select: none;
+      -webkit-user-select: none;
+      text-align: center;
+      padding: 10px 16px;
+    }
+
+    .player-score {
+      position: absolute;
+      width: 18%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 900;
+      background: rgba(210, 20, 30, 0.95);
+      color: white;
+      border-radius: 10px;
+      z-index: 6;
+    }
+
+    #p1 { left: 16%; top: 57.5%; }
+    #p2 { left: 41%; top: 57.5%; }
+    #p3 { left: 66%; top: 57.5%; }
+
+    .active-player {
+      box-shadow: 0 0 18px rgba(255, 221, 0, 0.95);
+      outline: 3px solid #ffd400;
+    }
+
+    .question-box {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      bottom: 3%;
+      min-height: 19%;
+      background: rgba(210, 20, 30, 0.95);
+      border-radius: 14px;
+      z-index: 7;
+      padding: 18px 16px 20px;
+      display: none;
+      box-sizing: border-box;
+    }
+
+    .question-title {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 22px;
+    }
+
+    .answers button {
+      min-height: 52px;
+      padding: 10px 12px;
+      font-size: 22px;
+      font-weight: 800;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      cursor: pointer;
+    }
+
+    .status-box {
+      position: absolute;
+      top: 37%;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 180px;
+      padding: 8px 12px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      background: rgba(0,0,0,0.55);
+      border-radius: 10px;
+      z-index: 7;
+    }
+
+    .end-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .end-card {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      color: black;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .end-card h2 {
+      margin-top: 0;
+      font-size: 30px;
+    }
+
+    .end-card .winner {
+      font-size: 24px;
+      font-weight: 900;
+      color: green;
+      margin-bottom: 14px;
+    }
+
+    .end-card .line {
+      font-size: 20px;
+      margin: 8px 0;
+    }
+
+    .end-card button {
+      margin-top: 18px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 10px;
+      background: #d2141e;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+      .counter {
+        font-size: 40px;
+        min-width: 120px;
+        min-height: 76px;
+      }
+
+      .player-score {
+        font-size: 28px;
+      }
+
+      .question-title {
+        font-size: 26px;
+      }
+
+      .answers button {
+        font-size: 19px;
+        min-height: 48px;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="game">
+  <div class="game">
+    <div class="round-numbers" id="numbers"></div>
 
-  <div class="round-numbers" id="numbers"></div>
+    <div class="counter" id="counter">-</div>
 
-  <div class="counter" id="counter">-</div>
+    <div class="status-box" id="statusBox">Na redu: Ti</div>
 
-  <div id="p1" class="player">0</div>
-  <div id="p2" class="player">0</div>
-  <div id="p3" class="player">0</div>
+    <div class="player-score active-player" id="p1">0</div>
+    <div class="player-score" id="p2">0</div>
+    <div class="player-score" id="p3">0</div>
 
-  <div class="question-box" id="qbox" style="display:none;">
-    <h2 id="question"></h2>
-    <div class="answers" id="answers"></div>
+    <div class="question-box" id="qbox">
+      <div class="question-title" id="questionText">Pitanje</div>
+      <div class="answers" id="answers"></div>
+    </div>
+
+    <div class="end-screen" id="endScreen">
+      <div class="end-card">
+        <h2>🏆 Rezultati</h2>
+        <div class="winner" id="winnerText"></div>
+        <div class="line" id="line2"></div>
+        <div class="line" id="line3"></div>
+        <button onclick="restartGame()">Igraj ponovno</button>
+      </div>
+    </div>
   </div>
 
-</div>
+  <script>
+    const TOTAL_ROUNDS = 10;
+    const BOT_CORRECT_CHANCE = 0.7;
 
-<script>
-let players=[0,0,0];
-let round=1;
-let used=new Set();
-let currentNumber=null;
-let currentPlayer=0;
-let running=true;
+    let players = [0, 0, 0];
+    let currentPlayer = 0; // 0 = ti, 1 i 2 = botovi
+    let round = 1;
+    let usedNumbers = new Set();
+    let currentNumber = null;
+    let counterInterval = null;
+    let counterRunning = false;
+    let questionLocked = false;
+    let pendingTieTarget = null;
+    let pendingTiePossible = false;
 
-const counter=document.getElementById("counter");
+    const counterEl = document.getElementById("counter");
+    const numbersEl = document.getElementById("numbers");
+    const qboxEl = document.getElementById("qbox");
+    const questionTextEl = document.getElementById("questionText");
+    const answersEl = document.getElementById("answers");
+    const statusBoxEl = document.getElementById("statusBox");
 
-/* PITANJA GENERATOR */
-function generateQuestion(n){
-  let a=Math.floor(Math.random()*n);
-  return {
-    question:`Koliko je ${a} + ${n-a}?`,
-    answers:[
-      a+(n-a),
-      a+(n-a)+1,
-      a+(n-a)-1,
-      a+(n-a)+2
-    ],
-    correct:0
-  }
-}
+    const scoreEls = [
+      document.getElementById("p1"),
+      document.getElementById("p2"),
+      document.getElementById("p3")
+    ];
 
-/* BROJEVI */
-function drawNumbers(){
-  let div=document.getElementById("numbers");
-  div.innerHTML="";
-  let start=(round-1)*10+1;
-  let end=round*10;
+    const defaultTurnPattern = [
+      [0, 1, 2],
+      [1, 2, 0],
+      [2, 0, 1]
+    ];
 
-  for(let i=start;i<=end;i++){
-    if(!used.has(i)){
-      let b=document.createElement("button");
-      b.innerText=i;
-      b.onclick=()=>startQuestion(i);
-      div.appendChild(b);
+    let currentTurnPattern = [];
+    let turnInRound = 0;
+
+    const questions = generateQuestionsForAllNumbers();
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
     }
-  }
-}
 
-/* COUNTER */
-let interval;
-function startCounter(){
-  running=true;
-  interval=setInterval(()=>{
-    let nums=[...document.querySelectorAll("#numbers button")].map(b=>+b.innerText);
-    if(nums.length===0)return;
-    let r=nums[Math.floor(Math.random()*nums.length)];
-    currentNumber=r;
-    counter.innerText=r;
-  },50);
-}
+    function generateQuestionsForAllNumbers() {
+      const map = {};
 
-counter.onclick=()=>{
-  if(running){
-    clearInterval(interval);
-    running=false;
-    startQuestion(currentNumber);
-  }
-};
+      for (let n = 1; n <= 100; n++) {
+        const type = n % 5;
 
-/* PITANJE */
-function startQuestion(num){
-  used.add(num);
+        let question = "";
+        let correctAnswer = "";
+        let wrongAnswers = [];
 
-  let q=generateQuestion(num);
-  let box=document.getElementById("qbox");
-  let qtext=document.getElementById("question");
-  let ans=document.getElementById("answers");
+        if (type === 0) {
+          const a = Math.floor(Math.random() * (n + 1));
+          const b = n - a;
+          question = `Koliko je ${a} + ${b}?`;
+          correctAnswer = String(n);
+          wrongAnswers = [String(n + 1), String(Math.max(0, n - 1)), String(n + 2)];
+        } else if (type === 1) {
+          const a = n + 10;
+          question = `Koliko je ${a} - 10?`;
+          correctAnswer = String(n);
+          wrongAnswers = [String(n + 1), String(Math.max(0, n - 2)), String(n + 3)];
+        } else if (type === 2) {
+          question = `Koji je broj veći od ${n - 1} za 1?`;
+          correctAnswer = String(n);
+          wrongAnswers = [String(n - 1), String(n + 1), String(n + 2)];
+        } else if (type === 3) {
+          question = `Koji je redni broj nakon ${n - 1}?`;
+          correctAnswer = String(n);
+          wrongAnswers = [String(n - 1), String(n + 1), String(n + 3)];
+        } else {
+          const a = n * 2;
+          question = `Ako broj ${a} podijeliš s 2, dobiješ?`;
+          correctAnswer = String(n);
+          wrongAnswers = [String(n + 1), String(Math.max(0, n - 1)), String(n + 4)];
+        }
 
-  qtext.innerText=q.question;
-  ans.innerHTML="";
+        const allAnswers = shuffleArray([correctAnswer, ...wrongAnswers]);
+        const correctIndex = allAnswers.indexOf(correctAnswer);
 
-  q.answers.forEach((a,i)=>{
-    let b=document.createElement("button");
-    b.innerText=a;
-    b.onclick=()=>answer(i===q.correct,num);
-    ans.appendChild(b);
-  });
+        map[n] = {
+          question,
+          answers: allAnswers,
+          correctIndex
+        };
+      }
 
-  box.style.display="block";
+      return map;
+    }
 
-  /* BOT */
-  if(currentPlayer!==0){
-    setTimeout(()=>{
-      let correct=Math.random()<0.7;
-      answer(correct,num);
-    },1500);
-  }
-}
+    function getCurrentPlayerIndex() {
+      return currentTurnPattern[turnInRound];
+    }
 
-/* ODGOVOR */
-function answer(correct,num){
-  document.getElementById("qbox").style.display="none";
+    function updateTurnPattern() {
+      if (round === TOTAL_ROUNDS) {
+        let sorted = [0, 1, 2].sort((a, b) => players[a] - players[b]);
+        currentTurnPattern = sorted;
+      } else {
+        currentTurnPattern = defaultTurnPattern[(round - 1) % 3];
+      }
+    }
 
-  if(correct){
-    players[currentPlayer]+=num;
-  }
+    function updateScores() {
+      scoreEls.forEach((el, i) => {
+        el.textContent = players[i];
+      });
+    }
 
-  updateScores();
-  nextTurn();
-}
+    function highlightActivePlayer() {
+      scoreEls.forEach((el, i) => {
+        el.classList.toggle("active-player", i === getCurrentPlayerIndex());
+      });
 
-/* SCORE */
-function updateScores(){
-  document.getElementById("p1").innerText=players[0];
-  document.getElementById("p2").innerText=players[1];
-  document.getElementById("p3").innerText=players[2];
-}
+      const names = ["Ti", "Bot 1", "Bot 2"];
+      statusBoxEl.textContent = `Na redu: ${names[getCurrentPlayerIndex()]} | Krug ${round}`;
+    }
 
-/* TURN */
-function nextTurn(){
-  currentPlayer=(currentPlayer+1)%3;
+    function getRoundStart() {
+      return (round - 1) * 10 + 1;
+    }
 
-  if(currentPlayer===0){
-    startCounter();
-  }else{
-    startQuestion(currentNumber);
-  }
-}
+    function getRoundEnd() {
+      return round * 10;
+    }
 
-/* START */
-drawNumbers();
-startCounter();
-</script>
+    function getAvailableNumbersForCurrentRound() {
+      const nums = [];
+      for (let i = getRoundStart(); i <= getRoundEnd(); i++) {
+        if (!usedNumbers.has(i)) nums.push(i);
+      }
+      return nums;
+    }
 
+    function renderCurrentRoundNumbers() {
+      numbersEl.innerHTML = "";
+      const nums = getAvailableNumbersForCurrentRound();
+
+      nums.forEach(num => {
+        const btn = document.createElement("button");
+        btn.textContent = num;
+        btn.dataset.num = num;
+        btn.disabled = true;
+        if (usedNumbers.has(num)) btn.classList.add("used");
+        numbersEl.appendChild(btn);
+      });
+    }
+
+    function enableHumanChoiceMode() {
+      const activePlayer = getCurrentPlayerIndex();
+      const buttons = numbersEl.querySelectorAll("button");
+
+      buttons.forEach(btn => {
+        btn.disabled = activePlayer !== 0 || usedNumbers.has(Number(btn.dataset.num));
+        btn.onclick = () => {
+          if (activePlayer !== 0) return;
+          const num = Number(btn.dataset.num);
+          if (usedNumbers.has(num)) return;
+          stopCounter();
+          currentNumber = num;
+          counterEl.textContent = num;
+          openQuestionForCurrentTurn(num);
+        };
+      });
+    }
+
+    function startCounter() {
+      stopCounter();
+      counterRunning = true;
+
+      counterInterval = setInterval(() => {
+        const nums = getAvailableNumbersForCurrentRound();
+        if (nums.length === 0) {
+          stopCounter();
+          return;
+        }
+        const rand = nums[Math.floor(Math.random() * nums.length)];
+        currentNumber = rand;
+        counterEl.textContent = rand;
+      }, 60);
+    }
+
+    function stopCounter() {
+      counterRunning = false;
+      if (counterInterval) {
+        clearInterval(counterInterval);
+        counterInterval = null;
+      }
+    }
+
+    function checkTieOpportunity(playerIndex) {
+      const myScore = players[playerIndex];
+      const others = players
+        .map((score, i) => ({ index: i, score }))
+        .filter(p => p.index !== playerIndex);
+
+      pendingTieTarget = null;
+      pendingTiePossible = false;
+
+      for (let other of others) {
+        let diff = other.score - myScore;
+        if (
+          diff > 0 &&
+          !usedNumbers.has(diff) &&
+          diff >= getRoundStart() &&
+          diff <= getRoundEnd()
+        ) {
+          pendingTieTarget = other.index;
+          pendingTiePossible = true;
+          return;
+        }
+      }
+    }
+
+    function openQuestionForCurrentTurn(num) {
+      if (questionLocked) return;
+      questionLocked = true;
+
+      usedNumbers.add(num);
+      renderCurrentRoundNumbers();
+
+      const currentIdx = getCurrentPlayerIndex();
+      checkTieOpportunity(currentIdx);
+
+      const q = questions[num];
+      questionTextEl.textContent = q.question;
+      answersEl.innerHTML = "";
+      qboxEl.style.display = "block";
+
+      if (currentIdx === 0) {
+        q.answers.forEach((answer, index) => {
+          const btn = document.createElement("button");
+          btn.textContent = answer;
+          btn.onclick = () => handleAnswer(index === q.correctIndex, num);
+          answersEl.appendChild(btn);
+        });
+      } else {
+        q.answers.forEach((answer) => {
+          const btn = document.createElement("button");
+          btn.textContent = answer;
+          btn.disabled = true;
+          answersEl.appendChild(btn);
+        });
+
+        setTimeout(() => {
+          const botCorrect = Math.random() < BOT_CORRECT_CHANCE;
+          handleAnswer(botCorrect, num);
+        }, 1400);
+      }
+    }
+
+    function handleAnswer(correct, num) {
+      if (!questionLocked) return;
+      questionLocked = false;
+      qboxEl.style.display = "none";
+
+      const idx = getCurrentPlayerIndex();
+
+      if (pendingTiePossible) {
+        if (correct) {
+          players[idx] += num;
+          if (pendingTieTarget !== null) {
+            players[pendingTieTarget] = 0;
+          }
+        } else {
+          players[idx] = 0;
+        }
+      } else {
+        if (correct) {
+          players[idx] += num;
+        }
+      }
+
+      updateScores();
+      advanceTurn();
+    }
+
+    function advanceTurn() {
+      turnInRound++;
+
+      if (turnInRound === 3) {
+        turnInRound = 0;
+        round++;
+
+        if (round > TOTAL_ROUNDS) {
+          showEndScreen();
+          return;
+        }
+      }
+
+      updateTurnPattern();
+      highlightActivePlayer();
+      prepareTurn();
+    }
+
+    function prepareTurn() {
+      const nums = getAvailableNumbersForCurrentRound();
+
+      if (nums.length === 0) {
+        turnInRound = 0;
+        round++;
+        if (round > TOTAL_ROUNDS) {
+          showEndScreen();
+          return;
+        }
+        updateTurnPattern();
+        highlightActivePlayer();
+        renderCurrentRoundNumbers();
+        prepareTurn();
+        return;
+      }
+
+      renderCurrentRoundNumbers();
+
+      const activePlayer = getCurrentPlayerIndex();
+
+      if (activePlayer === 0) {
+        counterEl.textContent = currentNumber ?? "-";
+        startCounter();
+        enableHumanChoiceMode();
+      } else {
+        startCounter();
+
+        setTimeout(() => {
+          stopCounter();
+          const available = getAvailableNumbersForCurrentRound();
+          if (available.length === 0) {
+            advanceTurn();
+            return;
+          }
+          currentNumber = available[Math.floor(Math.random() * available.length)];
+          counterEl.textContent = currentNumber;
+          openQuestionForCurrentTurn(currentNumber);
+        }, 1200);
+      }
+    }
+
+    counterEl.addEventListener("click", () => {
+      if (getCurrentPlayerIndex() !== 0) return;
+      if (!counterRunning) return;
+
+      stopCounter();
+      if (currentNumber === null) return;
+      openQuestionForCurrentTurn(currentNumber);
+    });
+
+    function showEndScreen() {
+      const ranking = [
+        { name: "Ti", score: players[0] },
+        { name: "Bot 1", score: players[1] },
+        { name: "Bot 2", score: players[2] }
+      ].sort((a, b) => b.score - a.score);
+
+      document.getElementById("winnerText").textContent =
+        `Pobjednik: ${ranking[0].name} (${ranking[0].score} bodova)`;
+
+      document.getElementById("line2").textContent =
+        `2. ${ranking[1].name} - ${ranking[1].score}`;
+
+      document.getElementById("line3").textContent =
+        `3. ${ranking[2].name} - ${ranking[2].score}`;
+
+      document.getElementById("endScreen").style.display = "flex";
+    }
+
+    function restartGame() {
+      players = [0, 0, 0];
+      currentPlayer = 0;
+      round = 1;
+      usedNumbers = new Set();
+      currentNumber = null;
+      counterRunning = false;
+      questionLocked = false;
+      pendingTieTarget = null;
+      pendingTiePossible = false;
+      turnInRound = 0;
+      document.getElementById("endScreen").style.display = "none";
+      qboxEl.style.display = "none";
+
+      updateTurnPattern();
+      updateScores();
+      highlightActivePlayer();
+      renderCurrentRoundNumbers();
+      prepareTurn();
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .catch(err => console.log("SW greška:", err));
+      });
+    }
+
+    updateTurnPattern();
+    updateScores();
+    highlightActivePlayer();
+    renderCurrentRoundNumbers();
+    prepareTurn();
+  </script>
 </body>
 </html>
