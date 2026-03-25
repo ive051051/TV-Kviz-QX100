@@ -46,18 +46,20 @@ body {
 }
 
 .round-numbers button {
-  padding: 0.6em 0.55em;
-  font-size: clamp(12px, 1.7vw, 18px);
-  white-space: nowrap;
+  aspect-ratio: 1 / 1;
   flex: 1 1 auto;
   max-width: 9%;
-  border-radius: 10px;
-  background: #1e5eff;
+  padding: 0;
+  font-size: clamp(14px, 2vw, 20px);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   color: white;
-  border: 2px solid white;
-  box-shadow:
-    0 0 6px rgba(255,255,255,0.6),
-    0 0 14px rgba(30,94,255,0.85);
+  border: 1.5px solid white;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
 /* COUNTER */
@@ -186,7 +188,6 @@ let running=true;
 
 const counter=document.getElementById("counter");
 
-/* PITANJA GENERATOR */
 function generateQuestion(n){
   let a=Math.floor(Math.random()*n);
   return {
@@ -201,7 +202,6 @@ function generateQuestion(n){
   }
 }
 
-/* BROJEVI */
 function drawNumbers(){
   let div=document.getElementById("numbers");
   div.innerHTML="";
@@ -218,7 +218,6 @@ function drawNumbers(){
   }
 }
 
-/* COUNTER */
 let interval;
 function startCounter(){
   running=true;
@@ -239,7 +238,6 @@ counter.onclick=()=>{
   }
 };
 
-/* PITANJE */
 function startQuestion(num){
   used.add(num);
 
@@ -260,7 +258,6 @@ function startQuestion(num){
 
   box.style.display="block";
 
-  /* BOT */
   if(currentPlayer!==0){
     setTimeout(()=>{
       let correct=Math.random()<0.7;
@@ -269,7 +266,6 @@ function startQuestion(num){
   }
 }
 
-/* ODGOVOR */
 function answer(correct,num){
   document.getElementById("qbox").style.display="none";
 
@@ -281,14 +277,12 @@ function answer(correct,num){
   nextTurn();
 }
 
-/* SCORE */
 function updateScores(){
   document.getElementById("p1").innerText=players[0];
   document.getElementById("p2").innerText=players[1];
   document.getElementById("p3").innerText=players[2];
 }
 
-/* TURN */
 function nextTurn(){
   currentPlayer=(currentPlayer+1)%3;
 
@@ -299,10 +293,18 @@ function nextTurn(){
   }
 }
 
-/* START */
 drawNumbers();
 startCounter();
 </script>
+
+</body>
+</html>
+
+</body>
+</html>
+
+</body>
+</html>
 
 </body>
 </html>
