@@ -179,132 +179,222 @@ body {
 </div>
 
 <script>
-let players=[0,0,0];
-let round=1;
-let used=new Set();
-let currentNumber=null;
-let currentPlayer=0;
-let running=true;
+let players = [0, 0, 0];
+let round = 1;
+let used = new Set();
+let currentNumber = null;
+let running = false;
+let currentTurnIndex = 0;
+let currentPlayer = 0;
+let questionOpen = false;
 
-const counter=document.getElementById("counter");
+const counter = document.getElementById("counter");
+
+const baseTurnPatterns = [
+  [0, 1, 2], // 1,4,7
+  [1, 2, 0], // 2,5,8
+  [2, 0, 1]  // 3,6,9
+];
 
 function generateQuestion(n){
-  let a=Math.floor(Math.random()*n);
+  let a = Math.floor(Math.random() * n);
   return {
     question:`Koliko je ${a} + ${n-a}?`,
     answers:[
-      a+(n-a),
-      a+(n-a)+1,
-      a+(n-a)-1,
-      a+(n-a)+2
+      a + (n-a),
+      a + (n-a) + 1,
+      a + (n-a) - 1,
+      a + (n-a) + 2
     ],
     correct:0
   }
 }
 
-function drawNumbers(){
-  let div=document.getElementById("numbers");
-  div.innerHTML="";
-  let start=(round-1)*10+1;
-  let end=round*10;
+function getRoundRange() {
+  return {
+    start: (round - 1) * 10 + 1,
+    end: round * 10
+  };
+}
 
-  for(let i=start;i<=end;i++){
-    if(!used.has(i)){
-      let b=document.createElement("button");
-      b.innerText=i;
-      b.onclick=()=>startQuestion(i);
+function getTurnOrder() {
+  if (round < 10) {
+    return baseTurnPatterns[(round - 1) % 3];
+  }
+
+  return [0, 1, 2]
+    .map(index => ({ index, score: players[index] }))
+    .sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      return a.index - b.index;
+    })
+    .map(item => item.index);
+}
+
+function setCurrentPlayer() {
+  currentPlayer = getTurnOrder()[currentTurnIndex];
+}
+
+function drawNumbers() {
+  let div = document.getElementById("numbers");
+  div.innerHTML = "";
+
+  let { start, end } = getRoundRange();
+
+  for (let i = start; i <= end; i++) {
+    if (!used.has(i)) {
+      let b = document.createElement("button");
+      b.innerText = i;
+      b.type = "button";
+      b.disabled = true;
       div.appendChild(b);
     }
   }
 }
 
-let interval;
-function startCounter(){
-  running=true;
-  interval=setInterval(()=>{
-    let nums=[...document.querySelectorAll("#numbers button")].map(b=>+b.innerText);
-    if(nums.length===0)return;
-    let r=nums[Math.floor(Math.random()*nums.length)];
-    currentNumber=r;
-    counter.innerText=r;
-  },50);
+function getAvailableNumbers() {
+  let { start, end } = getRoundRange();
+  let nums = [];
+
+  for (let i = start; i <= end; i++) {
+    if (!used.has(i)) nums.push(i);
+  }
+
+  return nums;
 }
 
-counter.onclick=()=>{
-  if(running){
-    clearInterval(interval);
-    running=false;
-    startQuestion(currentNumber);
-  }
+let interval;
+
+function stopCounter() {
+  running = false;
+  clearInterval(interval);
+}
+
+function startCounter() {
+  stopCounter();
+
+  let nums = getAvailableNumbers();
+  if (nums.length === 0) return;
+
+  running = true;
+
+  interval = setInterval(() => {
+    let available = getAvailableNumbers();
+    if (available.length === 0) {
+      stopCounter();
+      return;
+    }
+
+    let r = available[Math.floor(Math.random() * available.length)];
+    currentNumber = r;
+    counter.innerText = r;
+  }, 50);
+}
+
+counter.onclick = () => {
+  if (!running || questionOpen) return;
+  if (currentNumber === null) return;
+
+  stopCounter();
+  startQuestion(currentNumber);
 };
 
-function startQuestion(num){
+function startQuestion(num) {
+  if (questionOpen) return;
+
   used.add(num);
+  drawNumbers();
+  questionOpen = true;
 
-  let q=generateQuestion(num);
-  let box=document.getElementById("qbox");
-  let qtext=document.getElementById("question");
-  let ans=document.getElementById("answers");
+  let q = generateQuestion(num);
+  let box = document.getElementById("qbox");
+  let qtext = document.getElementById("question");
+  let ans = document.getElementById("answers");
 
-  qtext.innerText=q.question;
-  ans.innerHTML="";
+  qtext.innerText = q.question;
+  ans.innerHTML = "";
 
-  q.answers.forEach((a,i)=>{
-    let b=document.createElement("button");
-    b.innerText=a;
-    b.onclick=()=>answer(i===q.correct,num);
+  q.answers.forEach((a, i) => {
+    let b = document.createElement("button");
+    b.type = "button";
+    b.innerText = a;
+    b.onclick = () => answer(i === q.correct, num);
     ans.appendChild(b);
   });
 
-  box.style.display="block";
-
-  if(currentPlayer!==0){
-    setTimeout(()=>{
-      let correct=Math.random()<0.7;
-      answer(correct,num);
-    },1500);
-  }
+  box.style.display = "block";
 }
 
-function answer(correct,num){
-  document.getElementById("qbox").style.display="none";
+function answer(correct, num) {
+  questionOpen = false;
+  document.getElementById("qbox").style.display = "none";
 
-  if(correct){
-    players[currentPlayer]+=num;
+  if (correct) {
+    players[currentPlayer] += num;
   }
 
   updateScores();
   nextTurn();
 }
 
-function updateScores(){
-  document.getElementById("p1").innerText=players[0];
-  document.getElementById("p2").innerText=players[1];
-  document.getElementById("p3").innerText=players[2];
+function updateScores() {
+  document.getElementById("p1").innerText = players[0];
+  document.getElementById("p2").innerText = players[1];
+  document.getElementById("p3").innerText = players[2];
 }
 
-function nextTurn(){
-  currentPlayer=(currentPlayer+1)%3;
+function finishGame() {
+  stopCounter();
+  counter.innerText = "KRAJ";
 
-  if(currentPlayer===0){
-    startCounter();
-  }else{
-    startQuestion(currentNumber);
+  let ranking = [
+    { name: "Igrač 1", score: players[0] },
+    { name: "Igrač 2", score: players[1] },
+    { name: "Igrač 3", score: players[2] }
+  ].sort((a, b) => b.score - a.score);
+
+  setTimeout(() => {
+    alert(
+      "Kraj igre!\n\n" +
+      "1. " + ranking[0].name + " - " + ranking[0].score + " bodova\n" +
+      "2. " + ranking[1].name + " - " + ranking[1].score + " bodova\n" +
+      "3. " + ranking[2].name + " - " + ranking[2].score + " bodova"
+    );
+  }, 100);
+}
+
+function nextTurn() {
+  currentTurnIndex++;
+
+  if (currentTurnIndex >= 3) {
+    round++;
+    currentTurnIndex = 0;
+
+    if (round > 10) {
+      finishGame();
+      return;
+    }
+
+    drawNumbers();
   }
+
+  setCurrentPlayer();
+  currentNumber = null;
+  counter.innerText = "-";
+  startCounter();
 }
 
-drawNumbers();
-startCounter();
+function startGame() {
+  round = 1;
+  currentTurnIndex = 0;
+  setCurrentPlayer();
+  drawNumbers();
+  updateScores();
+  startCounter();
+}
+
+startGame();
 </script>
-
-</body>
-</html>
-
-</body>
-</html>
-
-</body>
-</html>
 
 </body>
 </html>
