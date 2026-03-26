@@ -153,38 +153,13 @@ body {
   opacity: 0;
   pointer-events: none;
   text-shadow:
-    0 0 8px rgba(255,240,170,0.95),
-    0 0 18px rgba(255,220,80,0.95),
-    0 0 34px rgba(255,190,0,1);
+    0 0 5px rgba(255,240,170,0.75),
+    0 0 12px rgba(255,220,80,0.7),
+    0 0 22px rgba(255,190,0,0.7);
 }
 
 .attack-number.show {
   opacity: 1;
-  animation: attackNumberPulse 1s ease-in-out infinite;
-}
-
-@keyframes attackNumberPulse {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    text-shadow:
-      0 0 8px rgba(255,240,170,0.95),
-      0 0 18px rgba(255,220,80,0.95),
-      0 0 34px rgba(255,190,0,1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.08);
-    text-shadow:
-      0 0 12px rgba(255,245,190,1),
-      0 0 24px rgba(255,225,90,1),
-      0 0 42px rgba(255,190,0,1);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    text-shadow:
-      0 0 8px rgba(255,240,170,0.95),
-      0 0 18px rgba(255,220,80,0.95),
-      0 0 34px rgba(255,190,0,1);
-  }
 }
 
 /* IGRAČI */
@@ -221,6 +196,11 @@ body {
   z-index: 8;
 }
 
+.player.gain-zoom {
+  animation: gainZoom 1s ease-in-out forwards;
+  z-index: 8;
+}
+
 @keyframes attackPulse {
   0% {
     box-shadow:
@@ -241,6 +221,18 @@ body {
 }
 
 @keyframes loseZoom {
+  0% {
+    transform: translateX(-50%) scale(1);
+  }
+  35% {
+    transform: translateX(-50%) scale(1.18);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes gainZoom {
   0% {
     transform: translateX(-50%) scale(1);
   }
@@ -301,6 +293,42 @@ body {
   box-shadow:
     0 0 6px rgba(255,255,255,0.45),
     0 0 14px rgba(30,94,255,0.85);
+  transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
+}
+
+.answers button.pressed {
+  background: #7fb0ff;
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.7),
+    0 0 18px rgba(120,170,255,0.9);
+  transform: scale(0.98);
+}
+
+.answers button.correct-answer {
+  background: #7ee68b;
+  border-color: #d7ffe0;
+  color: white;
+  box-shadow:
+    0 0 10px rgba(190,255,205,0.8),
+    0 0 18px rgba(90,220,120,0.85);
+}
+
+.answers button.wrong-answer {
+  background: #ff8e8e;
+  border-color: #ffd2d2;
+  color: white;
+  box-shadow:
+    0 0 10px rgba(255,210,210,0.8),
+    0 0 18px rgba(255,110,110,0.85);
+}
+
+.answers button.reveal-answer {
+  background: #e9dd8d;
+  border-color: #fff6c7;
+  color: #ffffff;
+  box-shadow:
+    0 0 10px rgba(255,245,190,0.75),
+    0 0 18px rgba(235,215,120,0.7);
 }
 </style>
 </head>
@@ -337,6 +365,7 @@ let currentPlayer = 0;
 let questionOpen = false;
 let round10Order = null;
 let attackTarget = null;
+let selectedAnswerLocked = false;
 
 const counter = document.getElementById("counter");
 const attackTextEl = document.getElementById("attackText");
@@ -517,6 +546,7 @@ function startQuestion(num) {
   used.add(num);
   drawNumbers();
   questionOpen = true;
+  selectedAnswerLocked = false;
 
   let q = generateQuestion(num);
   let box = document.getElementById("qbox");
@@ -530,11 +560,48 @@ function startQuestion(num) {
     let b = document.createElement("button");
     b.type = "button";
     b.innerText = a;
-    b.onclick = () => answer(i === q.correct, num);
+
+    b.addEventListener("pointerdown", () => {
+      if (!selectedAnswerLocked) b.classList.add("pressed");
+    });
+
+    const clearPressed = () => b.classList.remove("pressed");
+    b.addEventListener("pointerup", clearPressed);
+    b.addEventListener("pointerleave", clearPressed);
+    b.addEventListener("pointercancel", clearPressed);
+    b.addEventListener("mouseup", clearPressed);
+    b.addEventListener("mouseleave", clearPressed);
+    b.addEventListener("touchend", clearPressed);
+
+    b.onclick = () => handleAnswerSelection(i, q.correct, num);
     ans.appendChild(b);
   });
 
   box.style.display = "block";
+}
+
+function handleAnswerSelection(selectedIndex, correctIndex, num) {
+  if (selectedAnswerLocked) return;
+  selectedAnswerLocked = true;
+
+  const buttons = [...document.querySelectorAll("#answers button")];
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.classList.remove("pressed");
+  });
+
+  const isCorrect = selectedIndex === correctIndex;
+
+  if (isCorrect) {
+    buttons[selectedIndex].classList.add("correct-answer");
+  } else {
+    buttons[selectedIndex].classList.add("wrong-answer");
+    buttons[correctIndex].classList.add("reveal-answer");
+  }
+
+  setTimeout(() => {
+    answer(isCorrect, num);
+  }, 1000);
 }
 
 function animateScoreLoss(playerIndex, fromValue, done) {
@@ -570,28 +637,65 @@ function animateScoreLoss(playerIndex, fromValue, done) {
   }, stepTime);
 }
 
+function animateScoreGain(playerIndex, fromValue, toValue, done) {
+  const el = playerEls[playerIndex];
+
+  if (toValue <= fromValue) {
+    el.innerText = toValue;
+    done();
+    return;
+  }
+
+  el.classList.add("gain-zoom");
+
+  const duration = 900;
+  const stepTime = 50;
+  const steps = Math.max(1, Math.floor(duration / stepTime));
+  let step = 0;
+
+  const tick = setInterval(() => {
+    step++;
+    const gained = Math.round(fromValue + ((toValue - fromValue) * step / steps));
+    el.innerText = Math.min(toValue, gained);
+
+    if (step >= steps) {
+      clearInterval(tick);
+      el.innerText = toValue;
+
+      setTimeout(() => {
+        el.classList.remove("gain-zoom");
+        done();
+      }, 180);
+    }
+  }, stepTime);
+}
+
 function answer(correct, num) {
   questionOpen = false;
+  selectedAnswerLocked = false;
   document.getElementById("qbox").style.display = "none";
 
   if (attackTarget !== null) {
     if (correct) {
       const targetIndex = attackTarget;
+      const attackerIndex = currentPlayer;
       const oldTargetScore = players[targetIndex];
+      const oldAttackerScore = players[attackerIndex];
+      const newAttackerScore = oldAttackerScore + num;
 
-      players[currentPlayer] += num;
       players[targetIndex] = 0;
+      players[attackerIndex] = newAttackerScore;
 
-      document.getElementById("p1").innerText = players[0];
-      document.getElementById("p2").innerText = players[1];
-      document.getElementById("p3").innerText = players[2];
       playerEls[targetIndex].innerText = oldTargetScore;
+      playerEls[attackerIndex].innerText = oldAttackerScore;
 
       animateScoreLoss(targetIndex, oldTargetScore, () => {
         attackTarget = null;
         updatePlayerEffects();
-        updateScores();
-        nextTurn();
+        animateScoreGain(attackerIndex, oldAttackerScore, newAttackerScore, () => {
+          updateScores();
+          nextTurn();
+        });
       });
     } else {
       const loserIndex = currentPlayer;
@@ -609,7 +713,20 @@ function answer(correct, num) {
     }
   } else {
     if (correct) {
-      players[currentPlayer] += num;
+      const winnerIndex = currentPlayer;
+      const oldWinnerScore = players[winnerIndex];
+      const newWinnerScore = oldWinnerScore + num;
+
+      players[winnerIndex] = newWinnerScore;
+      playerEls[winnerIndex].innerText = oldWinnerScore;
+
+      animateScoreGain(winnerIndex, oldWinnerScore, newWinnerScore, () => {
+        attackTarget = null;
+        updatePlayerEffects();
+        updateScores();
+        nextTurn();
+      });
+      return;
     }
 
     attackTarget = null;

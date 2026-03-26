@@ -1,4 +1,4 @@
-const CACHE_NAME = "kviz-igra-v12";
+const CACHE_NAME = "kviz-igra-v13";
 
 const ASSETS_TO_CACHE = [
   "./",
