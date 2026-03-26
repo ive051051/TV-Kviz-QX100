@@ -160,6 +160,31 @@ body {
 
 .attack-number.show {
   opacity: 1;
+  animation: attackNumberPulse 1s ease-in-out infinite;
+}
+
+@keyframes attackNumberPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    text-shadow:
+      0 0 8px rgba(255,240,170,0.95),
+      0 0 18px rgba(255,220,80,0.95),
+      0 0 34px rgba(255,190,0,1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    text-shadow:
+      0 0 12px rgba(255,245,190,1),
+      0 0 24px rgba(255,225,90,1),
+      0 0 42px rgba(255,190,0,1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    text-shadow:
+      0 0 8px rgba(255,240,170,0.95),
+      0 0 18px rgba(255,220,80,0.95),
+      0 0 34px rgba(255,190,0,1);
+  }
 }
 
 /* IGRAČI */
@@ -184,11 +209,16 @@ body {
 }
 
 .player.active-player {
-  background: #4f86ff;
+  background: #63a0ff;
 }
 
 .player.attack-target {
   animation: attackPulse 0.75s ease-in-out infinite;
+}
+
+.player.lose-zoom {
+  animation: loseZoom 1s ease-in-out forwards;
+  z-index: 8;
 }
 
 @keyframes attackPulse {
@@ -207,6 +237,18 @@ body {
     box-shadow:
       0 0 8px rgba(255,255,255,0.55),
       0 0 16px rgba(30,94,255,0.9);
+  }
+}
+
+@keyframes loseZoom {
+  0% {
+    transform: translateX(-50%) scale(1);
+  }
+  35% {
+    transform: translateX(-50%) scale(1.18);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
   }
 }
 
@@ -472,7 +514,6 @@ counter.onclick = () => {
 function startQuestion(num) {
   if (questionOpen) return;
 
-  hideAttackVisuals();
   used.add(num);
   drawNumbers();
   questionOpen = true;
@@ -496,28 +537,86 @@ function startQuestion(num) {
   box.style.display = "block";
 }
 
+function animateScoreLoss(playerIndex, fromValue, done) {
+  const el = playerEls[playerIndex];
+
+  if (fromValue <= 0) {
+    el.innerText = 0;
+    done();
+    return;
+  }
+
+  el.classList.add("lose-zoom");
+
+  const duration = 900;
+  const stepTime = 50;
+  const steps = Math.max(1, Math.floor(duration / stepTime));
+  let step = 0;
+
+  const tick = setInterval(() => {
+    step++;
+    const remaining = Math.max(0, Math.round(fromValue * (1 - step / steps)));
+    el.innerText = remaining;
+
+    if (step >= steps) {
+      clearInterval(tick);
+      el.innerText = 0;
+
+      setTimeout(() => {
+        el.classList.remove("lose-zoom");
+        done();
+      }, 180);
+    }
+  }, stepTime);
+}
+
 function answer(correct, num) {
   questionOpen = false;
   document.getElementById("qbox").style.display = "none";
 
   if (attackTarget !== null) {
     if (correct) {
+      const targetIndex = attackTarget;
+      const oldTargetScore = players[targetIndex];
+
       players[currentPlayer] += num;
-      players[attackTarget] = 0;
+      players[targetIndex] = 0;
+
+      document.getElementById("p1").innerText = players[0];
+      document.getElementById("p2").innerText = players[1];
+      document.getElementById("p3").innerText = players[2];
+      playerEls[targetIndex].innerText = oldTargetScore;
+
+      animateScoreLoss(targetIndex, oldTargetScore, () => {
+        attackTarget = null;
+        updatePlayerEffects();
+        updateScores();
+        nextTurn();
+      });
     } else {
+      const loserIndex = currentPlayer;
+      const oldLoserScore = players[loserIndex];
+
       players[currentPlayer] = 0;
+      playerEls[loserIndex].innerText = oldLoserScore;
+
+      animateScoreLoss(loserIndex, oldLoserScore, () => {
+        attackTarget = null;
+        updatePlayerEffects();
+        updateScores();
+        nextTurn();
+      });
     }
   } else {
     if (correct) {
       players[currentPlayer] += num;
     }
+
+    attackTarget = null;
+    updatePlayerEffects();
+    updateScores();
+    nextTurn();
   }
-
-  attackTarget = null;
-  updatePlayerEffects();
-
-  updateScores();
-  nextTurn();
 }
 
 function updateScores() {
