@@ -110,6 +110,36 @@ body {
     0 0 16px rgba(30,94,255,0.9);
 }
 
+.player.active-player {
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.9),
+    0 0 22px rgba(255,255,255,0.65),
+    0 0 18px rgba(30,94,255,0.95);
+}
+
+.player.attack-target {
+  animation: attackPulse 0.75s ease-in-out infinite;
+}
+
+@keyframes attackPulse {
+  0% {
+    box-shadow:
+      0 0 8px rgba(255,255,255,0.55),
+      0 0 16px rgba(30,94,255,0.9);
+  }
+  50% {
+    box-shadow:
+      0 0 10px rgba(255,255,255,0.85),
+      0 0 18px rgba(255,80,80,0.95),
+      0 0 30px rgba(255,0,0,0.9);
+  }
+  100% {
+    box-shadow:
+      0 0 8px rgba(255,255,255,0.55),
+      0 0 16px rgba(30,94,255,0.9);
+  }
+}
+
 /* mali pomaci */
 #p1 { left: 21.6%; }
 #p2 { left: 50%; }
@@ -192,13 +222,19 @@ let currentTurnIndex = 0;
 let currentPlayer = 0;
 let questionOpen = false;
 let round10Order = null;
+let attackTarget = null;
 
 const counter = document.getElementById("counter");
+const playerEls = [
+  document.getElementById("p1"),
+  document.getElementById("p2"),
+  document.getElementById("p3")
+];
 
 const baseTurnPatterns = [
-  [0, 1, 2], // 1,4,7
-  [1, 2, 0], // 2,5,8
-  [2, 0, 1]  // 3,6,9
+  [0, 1, 2],
+  [1, 2, 0],
+  [2, 0, 1]
 ];
 
 function generateQuestion(n){
@@ -223,15 +259,20 @@ function getRoundRange() {
 }
 
 function getTurnOrder() {
-  if (round < 10) {
-    return baseTurnPatterns[(round - 1) % 3];
-  }
-
+  if (round < 10) return baseTurnPatterns[(round - 1) % 3];
   return round10Order;
+}
+
+function updatePlayerEffects() {
+  playerEls.forEach((el, index) => {
+    el.classList.toggle("active-player", index === currentPlayer);
+    el.classList.toggle("attack-target", index === attackTarget);
+  });
 }
 
 function setCurrentPlayer() {
   currentPlayer = getTurnOrder()[currentTurnIndex];
+  updatePlayerEffects();
 }
 
 function drawNumbers() {
@@ -246,9 +287,7 @@ function drawNumbers() {
     b.type = "button";
     b.disabled = true;
 
-    if (used.has(i)) {
-      b.classList.add("used-number");
-    }
+    if (used.has(i)) b.classList.add("used-number");
 
     div.appendChild(b);
   }
@@ -265,6 +304,22 @@ function getAvailableNumbers() {
   return nums;
 }
 
+function findAttackNumber() {
+  let available = getAvailableNumbers();
+  let myScore = players[currentPlayer];
+
+  for (let i = 0; i < 3; i++) {
+    if (i === currentPlayer) continue;
+
+    let diff = players[i] - myScore;
+    if (diff > 0 && available.includes(diff)) {
+      return { number: diff, target: i };
+    }
+  }
+
+  return null;
+}
+
 let interval;
 
 function stopCounter() {
@@ -274,6 +329,24 @@ function stopCounter() {
 
 function startCounter() {
   stopCounter();
+
+  let attack = findAttackNumber();
+
+  if (attack) {
+    attackTarget = attack.target;
+    updatePlayerEffects();
+    currentNumber = attack.number;
+    counter.innerText = currentNumber;
+
+    setTimeout(() => {
+      startQuestion(currentNumber);
+    }, 1000);
+
+    return;
+  }
+
+  attackTarget = null;
+  updatePlayerEffects();
 
   let nums = getAvailableNumbers();
   if (nums.length === 0) return;
@@ -331,9 +404,21 @@ function answer(correct, num) {
   questionOpen = false;
   document.getElementById("qbox").style.display = "none";
 
-  if (correct) {
-    players[currentPlayer] += num;
+  if (attackTarget !== null) {
+    if (correct) {
+      players[currentPlayer] += num;
+      players[attackTarget] = 0;
+    } else {
+      players[currentPlayer] = 0;
+    }
+  } else {
+    if (correct) {
+      players[currentPlayer] += num;
+    }
   }
+
+  attackTarget = null;
+  updatePlayerEffects();
 
   updateScores();
   nextTurn();
@@ -369,13 +454,11 @@ function nextTurn() {
   currentTurnIndex++;
 
   if (currentTurnIndex >= 3) {
+
     if (round === 9) {
       round10Order = [0, 1, 2]
         .map(index => ({ index, score: players[index] }))
-        .sort((a, b) => {
-          if (a.score !== b.score) return a.score - b.score;
-          return a.index - b.index;
-        })
+        .sort((a, b) => a.score - b.score)
         .map(item => item.index);
     }
 
@@ -400,6 +483,7 @@ function startGame() {
   round = 1;
   currentTurnIndex = 0;
   round10Order = null;
+  attackTarget = null;
   setCurrentPlayer();
   drawNumbers();
   updateScores();
@@ -408,6 +492,9 @@ function startGame() {
 
 startGame();
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
