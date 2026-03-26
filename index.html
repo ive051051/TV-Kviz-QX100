@@ -89,6 +89,79 @@ body {
     0 0 34px rgba(30,94,255,1);
 }
 
+.counter.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ATTACK TEXT */
+.attack-text {
+  position: absolute;
+  top: 31.2%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  font-size: clamp(34px, 6vw, 70px);
+  font-weight: 900;
+  color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.95),
+    0 0 20px rgba(255,80,80,0.95),
+    0 0 36px rgba(255,0,0,0.95);
+}
+
+.attack-text.show {
+  animation: attackZoom 2.6s ease forwards;
+}
+
+@keyframes attackZoom {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+}
+
+/* ATTACK NUMBER */
+.attack-number {
+  position: absolute;
+  top: 31.2%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 20%;
+  min-height: 6.2%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(42px, 6.5vw, 78px);
+  font-weight: 900;
+  color: #ffe66a;
+  line-height: 1;
+  padding: 1.2% 2.5%;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 8px rgba(255,240,170,0.95),
+    0 0 18px rgba(255,220,80,0.95),
+    0 0 34px rgba(255,190,0,1);
+}
+
+.attack-number.show {
+  opacity: 1;
+}
+
 /* IGRAČI */
 .player {
   position: absolute;
@@ -111,10 +184,7 @@ body {
 }
 
 .player.active-player {
-  box-shadow:
-    0 0 10px rgba(255,255,255,0.9),
-    0 0 22px rgba(255,255,255,0.65),
-    0 0 18px rgba(30,94,255,0.95);
+  background: #4f86ff;
 }
 
 .player.attack-target {
@@ -200,6 +270,8 @@ body {
   <div class="round-numbers" id="numbers"></div>
 
   <div class="counter" id="counter">-</div>
+  <div class="attack-text" id="attackText">NAPAD!!!</div>
+  <div class="attack-number" id="attackNumber"></div>
 
   <div id="p1" class="player">0</div>
   <div id="p2" class="player">0</div>
@@ -225,6 +297,8 @@ let round10Order = null;
 let attackTarget = null;
 
 const counter = document.getElementById("counter");
+const attackTextEl = document.getElementById("attackText");
+const attackNumberEl = document.getElementById("attackNumber");
 const playerEls = [
   document.getElementById("p1"),
   document.getElementById("p2"),
@@ -327,8 +401,34 @@ function stopCounter() {
   clearInterval(interval);
 }
 
+function hideAttackVisuals() {
+  attackTextEl.classList.remove("show");
+  attackNumberEl.classList.remove("show");
+  attackNumberEl.textContent = "";
+  counter.classList.remove("hidden");
+}
+
+function startAttackSequence(number) {
+  counter.classList.add("hidden");
+  attackNumberEl.classList.remove("show");
+  attackNumberEl.textContent = "";
+  attackTextEl.classList.remove("show");
+  void attackTextEl.offsetWidth;
+  attackTextEl.classList.add("show");
+
+  setTimeout(() => {
+    attackNumberEl.textContent = number;
+    attackNumberEl.classList.add("show");
+  }, 2600);
+
+  setTimeout(() => {
+    startQuestion(number);
+  }, 3600);
+}
+
 function startCounter() {
   stopCounter();
+  hideAttackVisuals();
 
   let attack = findAttackNumber();
 
@@ -336,12 +436,7 @@ function startCounter() {
     attackTarget = attack.target;
     updatePlayerEffects();
     currentNumber = attack.number;
-    counter.innerText = currentNumber;
-
-    setTimeout(() => {
-      startQuestion(currentNumber);
-    }, 1000);
-
+    startAttackSequence(currentNumber);
     return;
   }
 
@@ -377,6 +472,7 @@ counter.onclick = () => {
 function startQuestion(num) {
   if (questionOpen) return;
 
+  hideAttackVisuals();
   used.add(num);
   drawNumbers();
   questionOpen = true;
@@ -432,6 +528,7 @@ function updateScores() {
 
 function finishGame() {
   stopCounter();
+  hideAttackVisuals();
   counter.innerText = "KRAJ";
 
   let ranking = [
@@ -492,9 +589,6 @@ function startGame() {
 
 startGame();
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
