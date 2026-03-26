@@ -260,25 +260,33 @@ body {
   background: rgba(0, 0, 0, 0.68);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
-  padding: 2.5% 4% 2.5%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  padding: 2.1% 4% 2.1%;
+  text-align: center;
   box-shadow:
     0 0 18px rgba(0,0,0,0.45),
     inset 0 0 18px rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 /* PITANJE TEXT */
 .question-box h2 {
-  margin: 0;
+  margin: 0 auto 1.6%;
+  width: 92%;
   font-size: 30px;
-  line-height: 1.15;
+  line-height: 1.16;
   color: white;
   text-shadow: 0 0 8px rgba(255,255,255,0.35);
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 39%;
+  max-height: 39%;
   overflow: hidden;
 }
 
@@ -286,15 +294,16 @@ body {
 .answers {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6% 10%;
+  gap: 4.5% 8%;
+  margin-top: auto;
   flex-shrink: 0;
 }
 
 .answers button {
-  padding: 0.8em 0.7em;
-  min-height: 3.8em;
-  font-size: clamp(13px, 1.85vw, 17px);
-  line-height: 1.15;
+  padding: 0.62em 0.55em;
+  min-height: 3.2em;
+  font-size: clamp(12px, 1.7vw, 16px);
+  line-height: 1.1;
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
@@ -809,14 +818,19 @@ function fitQuestionText() {
   const answers = document.getElementById("answers");
 
   let fontSize = 30;
-  const minFont = 14;
+  const minFont = 11;
 
   qtext.style.fontSize = fontSize + "px";
 
   requestAnimationFrame(() => {
-    const maxHeight = box.clientHeight - answers.clientHeight - 10;
+    const boxHeight = box.clientHeight;
+    const answersHeight = answers.scrollHeight;
+    const availableHeight = Math.max(40, boxHeight - answersHeight - 26);
 
-    while (qtext.scrollHeight > maxHeight && fontSize > minFont) {
+    qtext.style.minHeight = availableHeight + "px";
+    qtext.style.maxHeight = availableHeight + "px";
+
+    while ((qtext.scrollHeight > availableHeight || qtext.scrollWidth > qtext.clientWidth) && fontSize > minFont) {
       fontSize -= 1;
       qtext.style.fontSize = fontSize + "px";
     }
@@ -1004,7 +1018,7 @@ function startQuestion(num) {
     ans.appendChild(b);
   });
 
-  box.style.display = "block";
+  box.style.display = "flex";
   fitQuestionText();
 }
 
