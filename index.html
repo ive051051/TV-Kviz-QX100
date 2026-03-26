@@ -260,8 +260,10 @@ body {
   background: rgba(0, 0, 0, 0.68);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
-  padding: 3.2% 4% 3.5%;
-  text-align: center;
+  padding: 2.5% 4% 2.5%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   box-shadow:
     0 0 18px rgba(0,0,0,0.45),
     inset 0 0 18px rgba(255,255,255,0.06);
@@ -269,14 +271,15 @@ body {
 
 /* PITANJE TEXT */
 .question-box h2 {
-  margin: 0 0 2.2% 0;
-  font-size: clamp(18px, 3vw, 30px);
+  margin: 0;
+  font-size: 30px;
   line-height: 1.15;
   color: white;
   text-shadow: 0 0 8px rgba(255,255,255,0.35);
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
+  overflow: hidden;
 }
 
 /* ODGOVORI */
@@ -284,8 +287,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6% 10%;
-  margin-top: 1%;
-  align-content: start;
+  flex-shrink: 0;
 }
 
 .answers button {
@@ -801,6 +803,26 @@ function getNextQuestion() {
   };
 }
 
+function fitQuestionText() {
+  const qtext = document.getElementById("question");
+  const box = document.getElementById("qbox");
+  const answers = document.getElementById("answers");
+
+  let fontSize = 30;
+  const minFont = 14;
+
+  qtext.style.fontSize = fontSize + "px";
+
+  requestAnimationFrame(() => {
+    const maxHeight = box.clientHeight - answers.clientHeight - 10;
+
+    while (qtext.scrollHeight > maxHeight && fontSize > minFont) {
+      fontSize -= 1;
+      qtext.style.fontSize = fontSize + "px";
+    }
+  });
+}
+
 function getRoundRange() {
   return {
     start: (round - 1) * 10 + 1,
@@ -983,6 +1005,7 @@ function startQuestion(num) {
   });
 
   box.style.display = "block";
+  fitQuestionText();
 }
 
 function handleAnswerSelection(selectedIndex, correctIndex, num) {
