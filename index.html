@@ -68,6 +68,15 @@ body {
   opacity: 0.35;
 }
 
+.round-numbers.final-round button {
+  color: #ffe66a;
+  border-color: #ffe66a;
+  box-shadow:
+    0 0 8px rgba(255, 230, 106, 0.9),
+    0 0 18px rgba(255, 210, 60, 0.85),
+    0 0 32px rgba(255, 170, 0, 0.75);
+}
+
 /* ROUND TEXT */
 .round-text {
   position: absolute;
@@ -83,6 +92,15 @@ body {
     0 0 10px rgba(255,255,255,0.95),
     0 0 20px rgba(80,160,255,0.95),
     0 0 36px rgba(30,94,255,0.95);
+}
+
+.round-text.final-round {
+  color: #ffe66a;
+  text-shadow:
+    0 0 8px rgba(255, 245, 190, 0.95),
+    0 0 18px rgba(255, 220, 90, 0.95),
+    0 0 34px rgba(255, 180, 0, 0.95),
+    0 0 50px rgba(255, 140, 0, 0.9);
 }
 
 .round-text.animate {
@@ -437,6 +455,7 @@ const counter = document.getElementById("counter");
 const attackTextEl = document.getElementById("attackText");
 const attackNumberEl = document.getElementById("attackNumber");
 const roundTextEl = document.getElementById("roundText");
+const numbersEl = document.getElementById("numbers");
 const playerEls = [
   document.getElementById("p1"),
   document.getElementById("p2"),
@@ -1034,6 +1053,34 @@ function playRoundSound() {
   c.osc.frequency.exponentialRampToValueAtTime(1320, t + 0.9);
 }
 
+function playFinalRoundSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const intro1 = makeOsc("triangle", 392, t, 0.24, 0.0001, 0.04);
+  intro1.osc.frequency.exponentialRampToValueAtTime(523.25, t + 0.24);
+
+  const intro2 = makeOsc("triangle", 523.25, t + 0.18, 0.28, 0.03, 0.0001);
+  intro2.osc.frequency.exponentialRampToValueAtTime(659.25, t + 0.46);
+
+  const intro3 = makeOsc("triangle", 659.25, t + 0.36, 0.34, 0.035, 0.0001);
+  intro3.osc.frequency.exponentialRampToValueAtTime(783.99, t + 0.70);
+
+  const brass1 = makeOsc("sawtooth", 523.25, t + 0.62, 0.52, 0.035, 0.0001);
+  const brass2 = makeOsc("sawtooth", 659.25, t + 0.62, 0.52, 0.03, 0.0001);
+  const brass3 = makeOsc("sawtooth", 783.99, t + 0.62, 0.52, 0.028, 0.0001);
+
+  brass1.osc.frequency.exponentialRampToValueAtTime(587.33, t + 1.14);
+  brass2.osc.frequency.exponentialRampToValueAtTime(739.99, t + 1.14);
+  brass3.osc.frequency.exponentialRampToValueAtTime(880.0, t + 1.14);
+
+  const finale1 = makeOsc("sine", 1046.5, t + 1.08, 0.8, 0.05, 0.0001);
+  const finale2 = makeOsc("triangle", 1318.5, t + 1.08, 0.82, 0.04, 0.0001);
+
+  finale1.osc.frequency.exponentialRampToValueAtTime(1174.66, t + 1.88);
+  finale2.osc.frequency.exponentialRampToValueAtTime(1567.98, t + 1.90);
+}
+
 function playAttackSound() {
   if (!audioUnlocked || !audioCtx) return;
   const t = audioCtx.currentTime;
@@ -1197,6 +1244,7 @@ function setCurrentPlayer() {
 function drawNumbers() {
   let div = document.getElementById("numbers");
   div.innerHTML = "";
+  div.classList.toggle("final-round", round === 10);
 
   let { start, end } = getRoundRange();
 
@@ -1254,11 +1302,19 @@ function hideAttackVisuals() {
 }
 
 function showRoundAnimation(callback) {
-  roundTextEl.textContent = round + ".KRUG";
+  const isFinalRound = round === 10;
+
+  roundTextEl.textContent = isFinalRound ? "FINALNI KRUG" : round + ".KRUG";
+  roundTextEl.classList.toggle("final-round", isFinalRound);
   roundTextEl.classList.remove("animate");
   void roundTextEl.offsetWidth;
   roundTextEl.classList.add("animate");
-  playRoundSound();
+
+  if (isFinalRound) {
+    playFinalRoundSound();
+  } else {
+    playRoundSound();
+  }
 
   setTimeout(() => {
     if (callback) callback();
@@ -1608,6 +1664,7 @@ function startGame() {
   currentNumber = 7;
   counter.innerText = "7";
   roundTextEl.textContent = "1.KRUG";
+  roundTextEl.classList.remove("final-round");
   showRoundAnimation(() => {
     startCounter();
   });
