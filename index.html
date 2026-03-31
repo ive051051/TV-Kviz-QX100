@@ -68,6 +68,42 @@ body {
   opacity: 0.35;
 }
 
+/* ROUND TEXT */
+.round-text {
+  position: absolute;
+  top: 13.9%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.55);
+  font-size: clamp(22px, 4vw, 42px);
+  font-weight: 900;
+  color: #ffffff;
+  opacity: 1;
+  pointer-events: none;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.95),
+    0 0 20px rgba(80,160,255,0.95),
+    0 0 36px rgba(30,94,255,0.95);
+}
+
+.round-text.animate {
+  animation: roundZoom 3s ease forwards;
+}
+
+@keyframes roundZoom {
+  0% {
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  16.666% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  83.333% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+}
+
 /* COUNTER */
 .counter {
   position: absolute;
@@ -364,6 +400,7 @@ body {
 <div class="game">
 
   <div class="round-numbers" id="numbers"></div>
+  <div class="round-text" id="roundText"></div>
 
   <div class="counter" id="counter">-</div>
   <div class="attack-text" id="attackText">NAPAD!!!</div>
@@ -399,6 +436,7 @@ let questionIndex = 0;
 const counter = document.getElementById("counter");
 const attackTextEl = document.getElementById("attackText");
 const attackNumberEl = document.getElementById("attackNumber");
+const roundTextEl = document.getElementById("roundText");
 const playerEls = [
   document.getElementById("p1"),
   document.getElementById("p2"),
@@ -1084,6 +1122,17 @@ function hideAttackVisuals() {
   counter.classList.remove("hidden");
 }
 
+function showRoundAnimation(callback) {
+  roundTextEl.textContent = round + ".KRUG";
+  roundTextEl.classList.remove("animate");
+  void roundTextEl.offsetWidth;
+  roundTextEl.classList.add("animate");
+
+  setTimeout(() => {
+    if (callback) callback();
+  }, 3000);
+}
+
 function startAttackSequence(number) {
   counter.classList.add("hidden");
   attackNumberEl.classList.remove("show");
@@ -1390,6 +1439,12 @@ function nextTurn() {
     }
 
     drawNumbers();
+
+    setCurrentPlayer();
+    showRoundAnimation(() => {
+      startCounter();
+    });
+    return;
   }
 
   setCurrentPlayer();
@@ -1407,7 +1462,12 @@ function startGame() {
   setCurrentPlayer();
   drawNumbers();
   updateScores();
-  startCounter();
+  currentNumber = 7;
+  counter.innerText = "7";
+  roundTextEl.textContent = "1.KRUG";
+  showRoundAnimation(() => {
+    startCounter();
+  });
 }
 
 startGame();
