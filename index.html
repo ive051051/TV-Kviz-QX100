@@ -978,6 +978,137 @@ const questionBank = [
   }
 ];
 
+/* ZVUKOVI */
+let audioCtx = null;
+let audioUnlocked = false;
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  if (audioCtx) audioUnlocked = true;
+}
+
+function makeOsc(type, frequency, startTime, duration, gainStart, gainEnd) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, startTime);
+
+  gain.gain.setValueAtTime(Math.max(0.0001, gainStart), startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainEnd), startTime + duration);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+  return { osc, gain };
+}
+
+function playCounterClickSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const { osc } = makeOsc("square", 520, t, 0.03, 0.012, 0.0001);
+  osc.frequency.exponentialRampToValueAtTime(780, t + 0.03);
+}
+
+function playRoundSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const a = makeOsc("triangle", 330, t, 0.22, 0.0001, 0.03);
+  a.osc.frequency.exponentialRampToValueAtTime(660, t + 0.22);
+
+  const b = makeOsc("sine", 660, t + 0.18, 0.35, 0.025, 0.0001);
+  b.osc.frequency.exponentialRampToValueAtTime(990, t + 0.53);
+
+  const c = makeOsc("triangle", 880, t + 0.4, 0.5, 0.03, 0.0001);
+  c.osc.frequency.exponentialRampToValueAtTime(1320, t + 0.9);
+}
+
+function playAttackSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  for (let i = 0; i < 4; i++) {
+    const start = t + i * 0.18;
+    const { osc } = makeOsc("sawtooth", 220, start, 0.12, 0.05, 0.0001);
+    osc.frequency.exponentialRampToValueAtTime(110, start + 0.12);
+  }
+
+  const boom = makeOsc("triangle", 140, t + 0.72, 0.55, 0.06, 0.0001);
+  boom.osc.frequency.exponentialRampToValueAtTime(70, t + 1.27);
+}
+
+function playCorrectSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const n1 = makeOsc("triangle", 660, t, 0.16, 0.045, 0.0001);
+  const n2 = makeOsc("triangle", 880, t + 0.12, 0.18, 0.04, 0.0001);
+  const n3 = makeOsc("triangle", 1320, t + 0.24, 0.35, 0.05, 0.0001);
+
+  n1.osc.frequency.exponentialRampToValueAtTime(760, t + 0.16);
+  n2.osc.frequency.exponentialRampToValueAtTime(990, t + 0.30);
+  n3.osc.frequency.exponentialRampToValueAtTime(1480, t + 0.59);
+}
+
+function playWrongSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const w1 = makeOsc("sawtooth", 320, t, 0.18, 0.05, 0.0001);
+  const w2 = makeOsc("square", 220, t + 0.12, 0.28, 0.04, 0.0001);
+
+  w1.osc.frequency.exponentialRampToValueAtTime(180, t + 0.18);
+  w2.osc.frequency.exponentialRampToValueAtTime(120, t + 0.40);
+}
+
+function playScoreGainSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const s1 = makeOsc("sine", 520, t, 0.08, 0.02, 0.0001);
+  const s2 = makeOsc("sine", 780, t + 0.08, 0.11, 0.018, 0.0001);
+  s1.osc.frequency.exponentialRampToValueAtTime(620, t + 0.08);
+  s2.osc.frequency.exponentialRampToValueAtTime(920, t + 0.19);
+}
+
+function playScoreLossSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const s1 = makeOsc("sine", 420, t, 0.1, 0.02, 0.0001);
+  const s2 = makeOsc("sine", 260, t + 0.08, 0.16, 0.02, 0.0001);
+  s1.osc.frequency.exponentialRampToValueAtTime(300, t + 0.1);
+  s2.osc.frequency.exponentialRampToValueAtTime(160, t + 0.24);
+}
+
+function playFinishSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const notes = [523.25, 659.25, 783.99, 1046.5];
+  notes.forEach((freq, i) => {
+    const start = t + i * 0.16;
+    const n = makeOsc("triangle", freq, start, 0.5, 0.04, 0.0001);
+    n.osc.frequency.exponentialRampToValueAtTime(freq * 1.03, start + 0.5);
+  });
+
+  const finale = makeOsc("sine", 1318.5, t + 0.68, 0.8, 0.05, 0.0001);
+  finale.osc.frequency.exponentialRampToValueAtTime(1567.98, t + 1.48);
+}
+
+["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
+  window.addEventListener(evt, ensureAudio, { passive: true, once: false });
+});
+
 function shuffleArray(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -1127,6 +1258,7 @@ function showRoundAnimation(callback) {
   roundTextEl.classList.remove("animate");
   void roundTextEl.offsetWidth;
   roundTextEl.classList.add("animate");
+  playRoundSound();
 
   setTimeout(() => {
     if (callback) callback();
@@ -1140,6 +1272,7 @@ function startAttackSequence(number) {
   attackTextEl.classList.remove("show");
   void attackTextEl.offsetWidth;
   attackTextEl.classList.add("show");
+  playAttackSound();
 
   setTimeout(() => {
     attackNumberEl.textContent = number;
@@ -1181,6 +1314,7 @@ function startCounter() {
     }
 
     let r = available[Math.floor(Math.random() * available.length)];
+    if (r !== currentNumber) playCounterClickSound();
     currentNumber = r;
     counter.innerText = r;
   }, 50);
@@ -1190,6 +1324,7 @@ counter.onclick = () => {
   if (!running || questionOpen) return;
   if (currentNumber === null) return;
 
+  ensureAudio();
   stopCounter();
   startQuestion(currentNumber);
 };
@@ -1216,7 +1351,10 @@ function startQuestion(num) {
     b.innerText = a;
 
     b.addEventListener("pointerdown", () => {
-      if (!selectedAnswerLocked) b.classList.add("pressed");
+      if (!selectedAnswerLocked) {
+        ensureAudio();
+        b.classList.add("pressed");
+      }
     });
 
     const clearPressed = () => b.classList.remove("pressed");
@@ -1249,9 +1387,11 @@ function handleAnswerSelection(selectedIndex, correctIndex, num) {
 
   if (isCorrect) {
     buttons[selectedIndex].classList.add("correct-answer");
+    playCorrectSound();
   } else {
     buttons[selectedIndex].classList.add("wrong-answer");
     buttons[correctIndex].classList.add("reveal-answer");
+    playWrongSound();
   }
 
   setTimeout(() => {
@@ -1268,6 +1408,7 @@ function animateScoreLoss(playerIndex, fromValue, done) {
     return;
   }
 
+  playScoreLossSound();
   el.classList.add("lose-zoom");
 
   const duration = 900;
@@ -1301,6 +1442,7 @@ function animateScoreGain(playerIndex, fromValue, toValue, done) {
     return;
   }
 
+  playScoreGainSound();
   el.classList.add("gain-zoom");
 
   const duration = 900;
@@ -1401,6 +1543,7 @@ function finishGame() {
   stopCounter();
   hideAttackVisuals();
   counter.innerText = "KRAJ";
+  playFinishSound();
 
   let ranking = [
     { name: "Igrač 1", score: players[0] },
