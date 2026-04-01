@@ -237,6 +237,56 @@ body {
   opacity: 1;
 }
 
+/* ATTACK RESULT OVERLAY */
+.attack-result-text {
+  position: absolute;
+  top: 31.2%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  font-size: clamp(34px, 6vw, 72px);
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.attack-result-text.show-correct {
+  color: #ffffff;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.95),
+    0 0 20px rgba(110,255,140,0.95),
+    0 0 38px rgba(40,210,90,0.95);
+  animation: attackResultZoom 1.1s ease forwards;
+}
+
+.attack-result-text.show-wrong {
+  color: #ffffff;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.95),
+    0 0 20px rgba(255,120,120,0.95),
+    0 0 38px rgba(255,40,40,0.95);
+  animation: attackResultZoom 1.1s ease forwards;
+}
+
+@keyframes attackResultZoom {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+}
+
 /* IGRAČI */
 .player {
   position: absolute;
@@ -257,6 +307,16 @@ body {
     0 0 6px rgba(255,255,255,0.55),
     0 0 16px rgba(30,94,255,0.9);
   z-index: 4;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.player.dimmed-player {
+  background: #6b7280;
+  color: #d9dde3;
+  border-color: #cfd4db;
+  box-shadow:
+    0 0 6px rgba(210,215,222,0.28),
+    0 0 14px rgba(120,125,132,0.4);
 }
 
 .player.active-player {
@@ -448,6 +508,7 @@ body {
   <div class="counter" id="counter">-</div>
   <div class="attack-text" id="attackText">NAPAD!!!</div>
   <div class="attack-number" id="attackNumber"></div>
+  <div class="attack-result-text" id="attackResultText"></div>
 
   <div id="p1" class="player">0</div>
   <div id="p2" class="player">0</div>
@@ -479,6 +540,7 @@ let questionIndex = 0;
 const counter = document.getElementById("counter");
 const attackTextEl = document.getElementById("attackText");
 const attackNumberEl = document.getElementById("attackNumber");
+const attackResultTextEl = document.getElementById("attackResultText");
 const attackDimEl = document.getElementById("attackDim");
 const roundTextEl = document.getElementById("roundText");
 const numbersEl = document.getElementById("numbers");
@@ -1178,6 +1240,19 @@ function playCrowdHitSound() {
   c4.osc.frequency.exponentialRampToValueAtTime(760, t + 0.37);
 }
 
+function playCrowdDisappointedSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const d1 = makeOsc("sine", 360, t, 0.22, 0.018, 0.0001);
+  const d2 = makeOsc("triangle", 300, t + 0.05, 0.28, 0.016, 0.0001);
+  const d3 = makeOsc("sine", 240, t + 0.11, 0.34, 0.014, 0.0001);
+
+  d1.osc.frequency.exponentialRampToValueAtTime(290, t + 0.22);
+  d2.osc.frequency.exponentialRampToValueAtTime(235, t + 0.33);
+  d3.osc.frequency.exponentialRampToValueAtTime(180, t + 0.45);
+}
+
 function playFinishSound() {
   if (!audioUnlocked || !audioCtx) return;
   const t = audioCtx.currentTime;
@@ -1272,8 +1347,13 @@ function getTurnOrder() {
 
 function updatePlayerEffects() {
   playerEls.forEach((el, index) => {
+    const isRelevant = attackTarget !== null
+      ? (index === currentPlayer || index === attackTarget)
+      : index === currentPlayer;
+
     el.classList.toggle("active-player", index === currentPlayer);
     el.classList.toggle("attack-target", index === attackTarget);
+    el.classList.toggle("dimmed-player", !isRelevant);
   });
 }
 
@@ -1336,10 +1416,17 @@ function hideAttackLock() {
   attackDimEl.classList.remove("show");
 }
 
-function maybePlayCrowdHit(num, isAttackSuccess = false) {
-  if (isAttackSuccess || num >= 7) {
+function maybePlayCrowdHit(num) {
+  if (num >= 7) {
     playCrowdHitSound();
   }
+}
+
+function showAttackResult(isCorrect) {
+  attackResultTextEl.textContent = isCorrect ? "TOČNO!" : "NETOČNO!";
+  attackResultTextEl.classList.remove("show-correct", "show-wrong");
+  void attackResultTextEl.offsetWidth;
+  attackResultTextEl.classList.add(isCorrect ? "show-correct" : "show-wrong");
 }
 
 let interval;
@@ -1353,6 +1440,8 @@ function hideAttackVisuals() {
   attackTextEl.classList.remove("show");
   attackNumberEl.classList.remove("show");
   attackNumberEl.textContent = "";
+  attackResultTextEl.classList.remove("show-correct", "show-wrong");
+  attackResultTextEl.textContent = "";
   counter.classList.remove("hidden");
 }
 
@@ -1383,6 +1472,7 @@ function startAttackSequence(number) {
   attackTextEl.classList.remove("show");
   void attackTextEl.offsetWidth;
   showAttackLock();
+  updatePlayerEffects();
   attackTextEl.classList.add("show");
   playAttackSound();
 
@@ -1497,14 +1587,23 @@ function handleAnswerSelection(selectedIndex, correctIndex, num) {
   });
 
   const isCorrect = selectedIndex === correctIndex;
+  const isAttackQuestion = attackTarget !== null;
 
   if (isCorrect) {
     buttons[selectedIndex].classList.add("correct-answer");
     playCorrectSound();
+    if (isAttackQuestion) {
+      showAttackResult(true);
+      playCrowdHitSound();
+    }
   } else {
     buttons[selectedIndex].classList.add("wrong-answer");
     buttons[correctIndex].classList.add("reveal-answer");
     playWrongSound();
+    if (isAttackQuestion) {
+      showAttackResult(false);
+      playCrowdDisappointedSound();
+    }
   }
 
   setTimeout(() => {
@@ -1599,8 +1698,6 @@ function answer(correct, num) {
       playerEls[targetIndex].innerText = oldTargetScore;
       playerEls[attackerIndex].innerText = oldAttackerScore;
 
-      maybePlayCrowdHit(num, true);
-
       animateScoreLoss(targetIndex, oldTargetScore, () => {
         attackTarget = null;
         hideAttackLock();
@@ -1634,7 +1731,7 @@ function answer(correct, num) {
       players[winnerIndex] = newWinnerScore;
       playerEls[winnerIndex].innerText = oldWinnerScore;
 
-      maybePlayCrowdHit(num, false);
+      maybePlayCrowdHit(num);
 
       animateScoreGain(winnerIndex, oldWinnerScore, newWinnerScore, () => {
         attackTarget = null;
@@ -1732,6 +1829,7 @@ function startGame() {
   roundTextEl.textContent = "1.KRUG";
   roundTextEl.classList.remove("final-round");
   hideAttackLock();
+  updatePlayerEffects();
   showRoundAnimation(() => {
     startCounter();
   });
