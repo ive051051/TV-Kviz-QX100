@@ -256,7 +256,7 @@ body {
     0 0 10px rgba(255,255,255,0.95),
     0 0 20px rgba(110,255,140,0.95),
     0 0 38px rgba(40,210,90,0.95);
-  animation: attackResultZoom 1.1s ease forwards;
+  animation: attackResultZoom 3s ease forwards;
 }
 
 .attack-result-text.show-wrong {
@@ -265,7 +265,7 @@ body {
     0 0 10px rgba(255,255,255,0.95),
     0 0 20px rgba(255,120,120,0.95),
     0 0 38px rgba(255,40,40,0.95);
-  animation: attackResultZoom 1.1s ease forwards;
+  animation: attackResultZoom 3s ease forwards;
 }
 
 @keyframes attackResultZoom {
@@ -273,17 +273,17 @@ body {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.4);
   }
-  18% {
+  8% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.12);
   }
-  78% {
+  88% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -1094,6 +1094,8 @@ const applauseAudio = new Audio("applause.mp3");
 const booAudio = new Audio("boo.mp3");
 applauseAudio.preload = "auto";
 booAudio.preload = "auto";
+applauseAudio.volume = 0.5;
+booAudio.volume = 0.5;
 
 function playAttackResultMp3(isCorrect) {
   const audio = isCorrect ? applauseAudio : booAudio;
@@ -1625,7 +1627,7 @@ function handleAnswerSelection(selectedIndex, correctIndex, num) {
 
   setTimeout(() => {
     answer(isCorrect, num);
-  }, 1000);
+  }, isAttackQuestion ? 3000 : 1000);
 }
 
 function animateScoreLoss(playerIndex, fromValue, done) {
