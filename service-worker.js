@@ -1,4 +1,4 @@
-const CACHE_NAME = "kviz-igra-v35";
+const CACHE_NAME = "kviz-igra-v37";
 
 const ASSETS_TO_CACHE = [
   "./",
@@ -7,7 +7,9 @@ const ASSETS_TO_CACHE = [
   "./service-worker.js",
   "./pozadina.png",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./applause.mp3",
+  "./boo.mp3"
 ];
 
 self.addEventListener("install", event => {
@@ -33,6 +35,8 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") return;
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request);
