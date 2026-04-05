@@ -33,6 +33,122 @@ body {
   overflow: hidden;
 }
 
+.start-screen {
+  position: absolute;
+  inset: 0;
+  background: url("START.png") center/100% 100% no-repeat;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.start-play-btn {
+  padding: 0.15em 0.35em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: white;
+  font-size: clamp(30px, 5.2vw, 48px);
+  line-height: 1;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  text-shadow:
+    0 0 10px rgba(0,0,0,0.65),
+    0 0 18px rgba(255,255,255,0.18),
+    0 0 28px rgba(80,160,255,0.16);
+  transition:
+    text-shadow 0.12s ease,
+    transform 0.08s ease,
+    filter 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.start-play-btn.pressed {
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.45),
+    0 0 22px rgba(255,255,255,0.65),
+    0 0 34px rgba(80,160,255,0.55);
+  transform: scale(0.98);
+  filter: brightness(1.18);
+}
+
+.start-form {
+  position: absolute;
+  top: 18.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8%;
+}
+
+.start-title {
+  font-size: clamp(22px, 3.5vw, 34px);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 3%;
+  text-shadow:
+    0 0 8px rgba(0,0,0,0.65),
+    0 0 16px rgba(0,0,0,0.45);
+}
+
+.name-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.2%;
+  margin-bottom: 2.2%;
+}
+
+.name-row span {
+  min-width: 10%;
+  text-align: right;
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 900;
+  text-shadow:
+    0 0 8px rgba(0,0,0,0.65),
+    0 0 16px rgba(0,0,0,0.45);
+}
+
+.name-row input {
+  width: 68%;
+  height: 2.6em;
+  padding: 0 0.7em;
+  box-sizing: border-box;
+  border-radius: 14px;
+  border: 2px solid white;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: clamp(16px, 2.4vw, 22px);
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 0 10px rgba(255,255,255,0.06),
+    0 0 10px rgba(0,0,0,0.22);
+}
+
+.name-row input::placeholder {
+  color: rgba(255,255,255,0.58);
+}
+
+.start-btn-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 9.2%;
+}
+
 .attack-dim {
   position: absolute;
   inset: 0;
@@ -340,6 +456,46 @@ body {
   z-index: 8;
 }
 
+.player-name {
+  position: absolute;
+  top: 60.1%;
+  transform: translateX(-50%) scale(1);
+  width: 20%;
+  text-align: center;
+  font-size: clamp(12px, 1.9vw, 18px);
+  font-weight: 900;
+  color: white;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.85),
+    0 0 10px rgba(0,0,0,0.55);
+  z-index: 4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.player-name.active-turn-name {
+  animation: turnNamePulse 0.55s ease-out;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.85),
+    0 0 10px rgba(0,0,0,0.55),
+    0 0 10px rgba(255,255,255,0.9),
+    0 0 18px rgba(255,255,255,0.7);
+}
+
+@keyframes turnNamePulse {
+  0% {
+    transform: translateX(-50%) scale(1);
+  }
+  42% {
+    transform: translateX(-50%) scale(1.28);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
 @keyframes attackPulse {
   0% {
     background: #1e5eff;
@@ -389,9 +545,9 @@ body {
 }
 
 /* mali pomaci */
-#p1 { left: 21.6%; }
-#p2 { left: 50%; }
-#p3 { left: 78.4%; }
+#p1, #n1 { left: 21.6%; }
+#p2, #n2 { left: 50%; }
+#p3, #n3 { left: 78.4%; }
 
 /* PITANJE */
 .question-box {
@@ -506,6 +662,31 @@ body {
 
 <div class="game">
 
+  <div class="start-screen" id="startScreen">
+    <div class="start-form">
+      <div class="start-title">UPIŠI IMENA:</div>
+
+      <div class="name-row">
+        <span>1.</span>
+        <input id="nameInput1" type="text" maxlength="6" autocomplete="off">
+      </div>
+
+      <div class="name-row">
+        <span>2.</span>
+        <input id="nameInput2" type="text" maxlength="6" autocomplete="off">
+      </div>
+
+      <div class="name-row">
+        <span>3.</span>
+        <input id="nameInput3" type="text" maxlength="6" autocomplete="off">
+      </div>
+
+      <div class="start-btn-row">
+        <button class="start-play-btn" id="startBtn" type="button">IGRAJ!</button>
+      </div>
+    </div>
+  </div>
+
   <div class="attack-dim" id="attackDim"></div>
 
   <div class="round-numbers" id="numbers"></div>
@@ -519,6 +700,10 @@ body {
   <div id="p1" class="player">0</div>
   <div id="p2" class="player">0</div>
   <div id="p3" class="player">0</div>
+
+  <div id="n1" class="player-name"></div>
+  <div id="n2" class="player-name"></div>
+  <div id="n3" class="player-name"></div>
 
   <div class="question-box" id="qbox" style="display:none;">
     <h2 id="question"></h2>
@@ -539,6 +724,7 @@ let questionOpen = false;
 let round10Order = null;
 let attackTarget = null;
 let selectedAnswerLocked = false;
+let playerNames = ["", "", ""];
 
 let gameQuestions = [];
 let questionIndex = 0;
@@ -550,6 +736,18 @@ const attackResultTextEl = document.getElementById("attackResultText");
 const attackDimEl = document.getElementById("attackDim");
 const roundTextEl = document.getElementById("roundText");
 const numbersEl = document.getElementById("numbers");
+const startScreenEl = document.getElementById("startScreen");
+const startBtn = document.getElementById("startBtn");
+const nameInputs = [
+  document.getElementById("nameInput1"),
+  document.getElementById("nameInput2"),
+  document.getElementById("nameInput3")
+];
+const nameEls = [
+  document.getElementById("n1"),
+  document.getElementById("n2"),
+  document.getElementById("n3")
+];
 const playerEls = [
   document.getElementById("p1"),
   document.getElementById("p2"),
@@ -1295,6 +1493,31 @@ function playFinishSound() {
   window.addEventListener(evt, ensureAudio, { passive: true, once: false });
 });
 
+nameInputs.forEach(input => {
+  input.addEventListener("input", () => {
+    input.value = input.value
+      .toUpperCase()
+      .replace(/\s+/g, "")
+      .slice(0, 6);
+  });
+});
+
+function setDisplayedNames() {
+  nameEls.forEach((el, index) => {
+    el.textContent = playerNames[index] || "";
+  });
+}
+
+function animateCurrentPlayerName() {
+  nameEls.forEach(el => el.classList.remove("active-turn-name"));
+
+  if (!playerNames[currentPlayer]) return;
+
+  const activeNameEl = nameEls[currentPlayer];
+  void activeNameEl.offsetWidth;
+  activeNameEl.classList.add("active-turn-name");
+}
+
 function shuffleArray(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -1383,6 +1606,7 @@ function updatePlayerEffects() {
 function setCurrentPlayer() {
   currentPlayer = getTurnOrder()[currentTurnIndex];
   updatePlayerEffects();
+  animateCurrentPlayerName();
 }
 
 function drawNumbers() {
@@ -1845,7 +2069,12 @@ function startGame() {
   currentTurnIndex = 0;
   round10Order = null;
   attackTarget = null;
+  used = new Set();
+  players = [0, 0, 0];
+  questionOpen = false;
+  selectedAnswerLocked = false;
   prepareGameQuestions();
+  setDisplayedNames();
   setCurrentPlayer();
   drawNumbers();
   updateScores();
@@ -1854,13 +2083,47 @@ function startGame() {
   roundTextEl.textContent = "1.KRUG";
   roundTextEl.classList.remove("final-round");
   hideAttackLock();
+  hideAttackVisuals();
   updatePlayerEffects();
   showRoundAnimation(() => {
     startCounter();
   });
 }
 
-startGame();
+function launchGameFromStartScreen() {
+  playerNames = nameInputs.map(input => input.value.trim().slice(0, 6).toUpperCase());
+  setDisplayedNames();
+  startScreenEl.style.display = "none";
+  startGame();
+}
+
+startBtn.addEventListener("pointerdown", (e) => {
+  ensureAudio();
+  startBtn.classList.add("pressed");
+  if (startBtn.setPointerCapture) {
+    try {
+      startBtn.setPointerCapture(e.pointerId);
+    } catch (err) {}
+  }
+});
+
+startBtn.addEventListener("pointerup", () => {
+  if (!startBtn.classList.contains("pressed")) return;
+  startBtn.classList.remove("pressed");
+  launchGameFromStartScreen();
+});
+
+startBtn.addEventListener("pointercancel", () => {
+  startBtn.classList.remove("pressed");
+});
+
+startBtn.addEventListener("lostpointercapture", () => {
+  startBtn.classList.remove("pressed");
+});
+
+startBtn.addEventListener("dragstart", (e) => {
+  e.preventDefault();
+});
 </script>
 
 </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "kviz-igra-v38";
+const CACHE_NAME = "kviz-igra-v39";
 
 const ASSETS_TO_CACHE = [
   "./",
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   "./manifest.json",
   "./service-worker.js",
   "./pozadina.png",
+  "./START.png",
   "./icon-192.png",
   "./icon-512.png",
   "./applause.mp3",
