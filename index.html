@@ -163,6 +163,36 @@ body {
   opacity: 1;
 }
 
+/* RESET TIPKA */
+.reset-btn {
+  position: absolute;
+  top: 1.9%;
+  left: 2.6%;
+  width: 7.2%;
+  aspect-ratio: 1 / 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.92);
+  background: rgba(8, 16, 40, 0.45);
+  color: white;
+  font-size: clamp(20px, 3.4vw, 32px);
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 22;
+  box-shadow:
+    0 0 10px rgba(0,0,0,0.35),
+    0 0 12px rgba(30,94,255,0.35);
+  transition: transform 0.08s ease, filter 0.12s ease, background 0.12s ease;
+}
+
+.reset-btn:active {
+  transform: scale(0.96);
+  filter: brightness(1.12);
+}
+
 /* GORNJI BROJEVI */
 .round-numbers {
   position: absolute;
@@ -476,12 +506,11 @@ body {
 }
 
 .player-name.active-turn-name {
+  color: #ffe66a;
   animation: turnNamePulse 0.55s ease-out;
   text-shadow:
     0 0 6px rgba(0,0,0,0.85),
-    0 0 10px rgba(0,0,0,0.55),
-    0 0 10px rgba(255,255,255,0.9),
-    0 0 18px rgba(255,255,255,0.7);
+    0 0 10px rgba(0,0,0,0.55);
 }
 
 @keyframes turnNamePulse {
@@ -541,6 +570,96 @@ body {
   }
   100% {
     transform: translateX(-50%) scale(1);
+  }
+}
+
+/* POBJEDNIK OVERLAY */
+.winner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.58);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 18;
+  transition: opacity 0.35s ease;
+}
+
+.winner-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.winner-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82%;
+  transform: translate(-50%, -50%) scale(0.45);
+  text-align: center;
+  opacity: 0;
+}
+
+.winner-overlay.show .winner-content {
+  animation: winnerZoom 1.2s ease forwards;
+}
+
+.winner-title {
+  font-size: clamp(28px, 4.8vw, 52px);
+  font-weight: 900;
+  color: white;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.55),
+    0 0 24px rgba(80,160,255,0.28);
+}
+
+.winner-subtitle {
+  margin-top: 1.5%;
+  font-size: clamp(22px, 3.8vw, 38px);
+  font-weight: 900;
+  color: white;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.45);
+}
+
+.winner-name {
+  margin-top: 4.2%;
+  font-size: clamp(34px, 6.6vw, 76px);
+  font-weight: 900;
+  color: #ffe66a;
+  line-height: 1.05;
+  text-shadow:
+    0 0 10px rgba(255,230,106,0.7),
+    0 0 24px rgba(255,180,0,0.35);
+  word-break: break-word;
+}
+
+.winner-score {
+  margin-top: 4%;
+  font-size: clamp(28px, 5vw, 58px);
+  font-weight: 900;
+  color: white;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.5),
+    0 0 24px rgba(80,160,255,0.22);
+}
+
+@keyframes winnerZoom {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+  35% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -687,6 +806,8 @@ body {
     </div>
   </div>
 
+  <button class="reset-btn" id="resetBtn" type="button" aria-label="Reset">↺</button>
+
   <div class="attack-dim" id="attackDim"></div>
 
   <div class="round-numbers" id="numbers"></div>
@@ -704,6 +825,15 @@ body {
   <div id="n1" class="player-name"></div>
   <div id="n2" class="player-name"></div>
   <div id="n3" class="player-name"></div>
+
+  <div class="winner-overlay" id="winnerOverlay">
+    <div class="winner-content">
+      <div class="winner-title">POBJEDNIK</div>
+      <div class="winner-subtitle">JE:</div>
+      <div class="winner-name" id="winnerName"></div>
+      <div class="winner-score" id="winnerScore"></div>
+    </div>
+  </div>
 
   <div class="question-box" id="qbox" style="display:none;">
     <h2 id="question"></h2>
@@ -725,9 +855,13 @@ let round10Order = null;
 let attackTarget = null;
 let selectedAnswerLocked = false;
 let playerNames = ["", "", ""];
+let gameFinished = false;
 
 let gameQuestions = [];
 let questionIndex = 0;
+
+let activeTimeouts = [];
+let activeIntervals = [];
 
 const counter = document.getElementById("counter");
 const attackTextEl = document.getElementById("attackText");
@@ -738,6 +872,10 @@ const roundTextEl = document.getElementById("roundText");
 const numbersEl = document.getElementById("numbers");
 const startScreenEl = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+const winnerOverlayEl = document.getElementById("winnerOverlay");
+const winnerNameEl = document.getElementById("winnerName");
+const winnerScoreEl = document.getElementById("winnerScore");
 const nameInputs = [
   document.getElementById("nameInput1"),
   document.getElementById("nameInput2"),
@@ -1301,6 +1439,28 @@ booAudio.preload = "auto";
 applauseAudio.volume = 0.5;
 booAudio.volume = 0.5;
 
+function trackedTimeout(fn, delay) {
+  const id = setTimeout(() => {
+    activeTimeouts = activeTimeouts.filter(t => t !== id);
+    fn();
+  }, delay);
+  activeTimeouts.push(id);
+  return id;
+}
+
+function trackedInterval(fn, delay) {
+  const id = setInterval(fn, delay);
+  activeIntervals.push(id);
+  return id;
+}
+
+function clearTrackedTimers() {
+  activeTimeouts.forEach(clearTimeout);
+  activeIntervals.forEach(clearInterval);
+  activeTimeouts = [];
+  activeIntervals = [];
+}
+
 function playAttackResultMp3(isCorrect) {
   const audio = isCorrect ? applauseAudio : booAudio;
   try {
@@ -1511,9 +1671,9 @@ function setDisplayedNames() {
 function animateCurrentPlayerName() {
   nameEls.forEach(el => el.classList.remove("active-turn-name"));
 
-  if (!playerNames[currentPlayer]) return;
-
   const activeNameEl = nameEls[currentPlayer];
+  if (!activeNameEl) return;
+
   void activeNameEl.offsetWidth;
   activeNameEl.classList.add("active-turn-name");
 }
@@ -1692,6 +1852,12 @@ function hideAttackVisuals() {
   counter.classList.remove("hidden");
 }
 
+function hideWinnerOverlay() {
+  winnerOverlayEl.classList.remove("show");
+  winnerNameEl.textContent = "";
+  winnerScoreEl.textContent = "";
+}
+
 function showRoundAnimation(callback) {
   const isFinalRound = round === 10;
 
@@ -1707,7 +1873,7 @@ function showRoundAnimation(callback) {
     playRoundSound();
   }
 
-  setTimeout(() => {
+  trackedTimeout(() => {
     if (callback) callback();
   }, 3000);
 }
@@ -1723,17 +1889,19 @@ function startAttackSequence(number) {
   attackTextEl.classList.add("show");
   playAttackSound();
 
-  setTimeout(() => {
+  trackedTimeout(() => {
     attackNumberEl.textContent = number;
     attackNumberEl.classList.add("show");
   }, 2600);
 
-  setTimeout(() => {
+  trackedTimeout(() => {
     startQuestion(number);
   }, 3600);
 }
 
 function startCounter() {
+  if (gameFinished) return;
+
   stopCounter();
   hideAttackVisuals();
 
@@ -1756,7 +1924,7 @@ function startCounter() {
 
   running = true;
 
-  interval = setInterval(() => {
+  interval = trackedInterval(() => {
     let available = getAvailableNumbers();
     if (available.length === 0) {
       stopCounter();
@@ -1771,7 +1939,7 @@ function startCounter() {
 }
 
 counter.onclick = () => {
-  if (!running || questionOpen) return;
+  if (!running || questionOpen || gameFinished) return;
   if (currentNumber === null) return;
 
   ensureAudio();
@@ -1780,7 +1948,7 @@ counter.onclick = () => {
 };
 
 function startQuestion(num) {
-  if (questionOpen) return;
+  if (questionOpen || gameFinished) return;
 
   used.add(num);
   drawNumbers();
@@ -1824,7 +1992,7 @@ function startQuestion(num) {
 }
 
 function handleAnswerSelection(selectedIndex, correctIndex, num) {
-  if (selectedAnswerLocked) return;
+  if (selectedAnswerLocked || gameFinished) return;
   selectedAnswerLocked = true;
 
   const buttons = [...document.querySelectorAll("#answers button")];
@@ -1855,7 +2023,7 @@ function handleAnswerSelection(selectedIndex, correctIndex, num) {
     }
   }
 
-  setTimeout(() => {
+  trackedTimeout(() => {
     answer(isCorrect, num);
   }, isAttackQuestion ? 3000 : 1000);
 }
@@ -1877,7 +2045,7 @@ function animateScoreLoss(playerIndex, fromValue, done) {
   const steps = Math.max(1, Math.floor(duration / stepTime));
   let step = 0;
 
-  const tick = setInterval(() => {
+  const tick = trackedInterval(() => {
     step++;
     const remaining = Math.max(0, Math.round(fromValue * (1 - step / steps)));
     el.innerText = remaining;
@@ -1886,7 +2054,7 @@ function animateScoreLoss(playerIndex, fromValue, done) {
       clearInterval(tick);
       el.innerText = 0;
 
-      setTimeout(() => {
+      trackedTimeout(() => {
         el.classList.remove("lose-zoom");
         done();
       }, 180);
@@ -1911,7 +2079,7 @@ function animateScoreGain(playerIndex, fromValue, toValue, done) {
   const steps = Math.max(1, Math.floor(duration / stepTime));
   let step = 0;
 
-  const tick = setInterval(() => {
+  const tick = trackedInterval(() => {
     step++;
     const gained = Math.round(fromValue + ((toValue - fromValue) * step / steps));
     el.innerText = Math.min(toValue, gained);
@@ -1920,7 +2088,7 @@ function animateScoreGain(playerIndex, fromValue, toValue, done) {
       clearInterval(tick);
       el.innerText = toValue;
 
-      setTimeout(() => {
+      trackedTimeout(() => {
         el.classList.remove("gain-zoom");
         done();
       }, 180);
@@ -1929,6 +2097,8 @@ function animateScoreGain(playerIndex, fromValue, toValue, done) {
 }
 
 function answer(correct, num) {
+  if (gameFinished) return;
+
   questionOpen = false;
   selectedAnswerLocked = false;
   document.getElementById("qbox").style.display = "none";
@@ -2006,30 +2176,48 @@ function updateScores() {
   document.getElementById("p3").innerText = players[2];
 }
 
+function getWinnerData() {
+  let winnerIndex = 0;
+
+  for (let i = 1; i < players.length; i++) {
+    if (players[i] > players[winnerIndex]) {
+      winnerIndex = i;
+    }
+  }
+
+  const winnerName = playerNames[winnerIndex] || `IGRAČ ${winnerIndex + 1}`;
+
+  return {
+    index: winnerIndex,
+    name: winnerName,
+    score: players[winnerIndex]
+  };
+}
+
 function finishGame() {
+  if (gameFinished) return;
+
+  gameFinished = true;
   stopCounter();
   hideAttackVisuals();
   hideAttackLock();
   counter.innerText = "KRAJ";
   playFinishSound();
 
-  let ranking = [
-    { name: "Igrač 1", score: players[0] },
-    { name: "Igrač 2", score: players[1] },
-    { name: "Igrač 3", score: players[2] }
-  ].sort((a, b) => b.score - a.score);
+  const winner = getWinnerData();
 
-  setTimeout(() => {
-    alert(
-      "Kraj igre!\n\n" +
-      "1. " + ranking[0].name + " - " + ranking[0].score + " bodova\n" +
-      "2. " + ranking[1].name + " - " + ranking[1].score + " bodova\n" +
-      "3. " + ranking[2].name + " - " + ranking[2].score + " bodova"
-    );
-  }, 100);
+  trackedTimeout(() => {
+    winnerNameEl.textContent = winner.name;
+    winnerScoreEl.textContent = winner.score;
+    winnerOverlayEl.classList.remove("show");
+    void winnerOverlayEl.offsetWidth;
+    winnerOverlayEl.classList.add("show");
+  }, 1000);
 }
 
 function nextTurn() {
+  if (gameFinished) return;
+
   currentTurnIndex++;
 
   if (currentTurnIndex >= 3) {
@@ -2065,6 +2253,7 @@ function nextTurn() {
 }
 
 function startGame() {
+  clearTrackedTimers();
   round = 1;
   currentTurnIndex = 0;
   round10Order = null;
@@ -2073,6 +2262,7 @@ function startGame() {
   players = [0, 0, 0];
   questionOpen = false;
   selectedAnswerLocked = false;
+  gameFinished = false;
   prepareGameQuestions();
   setDisplayedNames();
   setCurrentPlayer();
@@ -2084,10 +2274,51 @@ function startGame() {
   roundTextEl.classList.remove("final-round");
   hideAttackLock();
   hideAttackVisuals();
+  hideWinnerOverlay();
   updatePlayerEffects();
+  resetBtn.style.display = "flex";
   showRoundAnimation(() => {
     startCounter();
   });
+}
+
+function resetGameToStart() {
+  clearTrackedTimers();
+  stopCounter();
+  running = false;
+  players = [0, 0, 0];
+  round = 1;
+  currentTurnIndex = 0;
+  currentPlayer = 0;
+  currentNumber = null;
+  questionOpen = false;
+  round10Order = null;
+  attackTarget = null;
+  selectedAnswerLocked = false;
+  playerNames = ["", "", ""];
+  gameFinished = false;
+  used = new Set();
+  questionIndex = 0;
+  gameQuestions = [];
+
+  nameInputs.forEach(input => {
+    input.value = "";
+  });
+
+  setDisplayedNames();
+  updateScores();
+  drawNumbers();
+  hideAttackLock();
+  hideAttackVisuals();
+  hideWinnerOverlay();
+  updatePlayerEffects();
+
+  document.getElementById("qbox").style.display = "none";
+  numbersEl.innerHTML = "";
+  roundTextEl.textContent = "";
+  counter.innerText = "-";
+  resetBtn.style.display = "none";
+  startScreenEl.style.display = "flex";
 }
 
 function launchGameFromStartScreen() {
@@ -2123,6 +2354,11 @@ startBtn.addEventListener("lostpointercapture", () => {
 
 startBtn.addEventListener("dragstart", (e) => {
   e.preventDefault();
+});
+
+resetBtn.addEventListener("click", () => {
+  ensureAudio();
+  resetGameToStart();
 });
 </script>
 
